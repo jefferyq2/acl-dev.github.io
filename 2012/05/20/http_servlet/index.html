@@ -1,0 +1,765 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、概述互联网刚兴起时，很多项目都是用 C &#x2F;Perl 语言写的一大堆 CGI，一些老程序员可谓是偿尽了编程的苦，因为那时国内的技术水平普遍比较低，如果你会 CGI 编程，就已经算是行业中人了，如果你对 CGI 编程比较熟练，则就可以称得是“专家”了，后来技术不断进步，各种国外的新技术都进入中国并不断得到普及，CGI 就逐渐沦为一种落后的技术，后来的 PHP, JSP&#x2F;Serv">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用C++实现类似于JAVA HttpServlet 的编程接口">
+<meta property="og:url" content="https://acl-dev.cn/2012/05/20/http_servlet/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="一、概述互联网刚兴起时，很多项目都是用 C &#x2F;Perl 语言写的一大堆 CGI，一些老程序员可谓是偿尽了编程的苦，因为那时国内的技术水平普遍比较低，如果你会 CGI 编程，就已经算是行业中人了，如果你对 CGI 编程比较熟练，则就可以称得是“专家”了，后来技术不断进步，各种国外的新技术都进入中国并不断得到普及，CGI 就逐渐沦为一种落后的技术，后来的 PHP, JSP&#x2F;Serv">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2012-05-20T05:08:24.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.181Z">
+<meta property="article:author" content="zsxxsz">
+<meta property="article:tag" content="http">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>用C++实现类似于JAVA HttpServlet 的编程接口 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="用C++实现类似于JAVA HttpServlet 的编程接口"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2012-05-20 13:08" pubdate>
+          2012年5月20日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          89 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">用C++实现类似于JAVA HttpServlet 的编程接口</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>互联网刚兴起时，很多项目都是用 C &#x2F;Perl 语言写的一大堆 CGI，一些老程序员可谓是偿尽了编程的苦，因为那时国内的技术水平普遍比较低，如果你会 CGI 编程，就已经算是行业中人了，如果你对 CGI 编程比较熟练，则就可以称得是“专家”了，后来技术不断进步，各种国外的新技术都进入中国并不断得到普及，CGI 就逐渐沦为一种落后的技术，后来的 PHP, JSP&#x2F;Servlet, ASP 逐渐占领了 WEB 编程的技术市场，这个时候如果你说再用 C 写 CGI，别人会感觉是在和古人对话。现在主流的 WEB 开发语言一个很大的优势就是有各种相对成熟的基础库和框架，开发效率很高，而 CGI 则就逊色很多。当然，这些语言也得有执行效率相对较低的问题，毕竟它们都是脚本语言或半编译语言，需要虚拟机解释执行，象 facebook 的 WEB 前端基本都是用 PHP 写的，他们为了解决执行效率问题，在一位华人的领导下开发了可以将 PHP 代码转成 C++ 代码的工具（hiphop)，从而使执行效率大大提高，这也从另一个侧面反映出技术人员还是希望他们的程序能够运行的更快些。</p>
+<p>本文主要描述了 acl_cpp 库中有关 WEB 编程的方法类，为了使大家容易上手，其中的接口设计及命名尽量模仿 JAVA HttpServlet 等相关的类（希望 Oracle 不会告我侵权，呵呵）。如果您会用C&#x2F;C++编程，同时又有使用 Java Servlet 进行 WEB 编程的经验，则该文您读起来一点不会费力，当然如果您多年从事 WEB 开发，我想理解这些类的设计及用法也不应该有什么难度。好了，下面就开始讲如何使用 acl_cpp 库中的 http&#x2F; 模块下的类进行 web 编程。</p>
+<p>在 acl_cpp&#x2F;src&#x2F;http 模块下，有几个类与 WEB 编程相关：HttpServlet，HttpServletRequest, HttpServletResponse, HttpSession, http_header, http_mime, http_client。如果您掌握了这几个类的用法，则进行 WEB 编程就不会有什么问题了，下面一一介绍这几个类：</p>
+<h2 id="二、HttpServlet-类"><a href="#二、HttpServlet-类" class="headerlink" title="二、HttpServlet 类"></a>二、HttpServlet 类</h2><p>构造函数及析构函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 构造函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-built_in">HttpServlet</span>(<span class="hljs-type">void</span>);<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 纯虚析构函数，即该类必须由子类进行实例化</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">HttpServlet</span>(<span class="hljs-type">void</span>) = <span class="hljs-number">0</span>;<br></code></pre></td></tr></table></figure>
+
+<p>在构建函数中，为了支持 HttpSession 数据的存储，需要用户给出 memcached 的服务器地址（目前仅支持采用 memcached 来存储 session 数据，将来应该会扩展至可以支持 redis 等），同时用户还需要给出 session 的 cookie ID 标识符以发给浏览器。</p>
+<p>四个虚接口，需要子类实现以应对不同的浏览器的 HTTP 请求：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当 HTTP 请求为 GET 方式时的虚函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">doGet</span><span class="hljs-params">(HttpServletRequest&amp;, HttpServletResponse&amp;)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当 HTTP 请求为 POST 方式时的虚函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">doPost</span><span class="hljs-params">(HttpServletRequest&amp;, HttpServletResponse&amp;)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当 HTTP 请求为 PUT 方式时的虚函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">doPut</span><span class="hljs-params">(HttpServletRequest&amp;, HttpServletResponse&amp;)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当 HTTP 请求为 CONNECT 方式时的虚函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">doConnect</span><span class="hljs-params">(HttpServletRequest&amp;, HttpServletResponse&amp;)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当 HTTP 请求为 PURGE 方式时的虚函数，该方法在清除 SQUID 的缓存</span><br><span class="hljs-comment"> * 时会用到</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">doPurge</span><span class="hljs-params">(HttpServletRequest&amp;, HttpServletResponse&amp;)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>用户实现的 HttpServlet 子类中可以实现以上几个虚接口的一个或者几个，以满足不同的 HTTP 请求。</p>
+<p>下面的函数为 HttpServlet 类开始运行的函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * HttpServlet 对象开始运行，接收 HTTP 请求，并回调以下 doXXX 虚函数</span><br><span class="hljs-comment"> * @param session &#123;session&amp;&#125; 存储 session 数据的对象</span><br><span class="hljs-comment"> * @param stream &#123;socket_stream*&#125; 当在 acl_master 服务器框架控制下</span><br><span class="hljs-comment"> *  运行时，该参数必须非空；当在 apache 下以 CGI 方式运行时，该参数</span><br><span class="hljs-comment"> *  设为 NULL；另外，该函数内部不会关闭流连接，应用应自行处理流对象</span><br><span class="hljs-comment"> *  的关闭情况，这样可以方便与 acl_master 架构结合</span><br><span class="hljs-comment"> * @param body_parse &#123;bool&#125; 针对 POST 方法，该参数指定是否需要</span><br><span class="hljs-comment"> *  读取 HTTP 请求数据体并按 n/v 方式进行分析；当为 true 则内</span><br><span class="hljs-comment"> *  部会读取 HTTP 请求体数据，并进行分析，当用户调用 getParameter</span><br><span class="hljs-comment"> *  时，不仅可以获得 URL 中的参数，同时可以获得 POST 数据体中</span><br><span class="hljs-comment"> *  的参数；当该参数为 false 时则不读取数据体</span><br><span class="hljs-comment"> * @param body_limit &#123;int&#125; 针对 POST 方法，当数据体为文本参数</span><br><span class="hljs-comment"> *  类型时，此参数限制数据体的长度；当数据体为数据流或 MIME</span><br><span class="hljs-comment"> *  格式或 body_read 为 false，此参数无效</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回处理结果</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">doRun</span><span class="hljs-params">(session&amp; session, socket_stream* stream = <span class="hljs-literal">NULL</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">	<span class="hljs-type">bool</span> body_parse = <span class="hljs-literal">true</span>, <span class="hljs-type">int</span> body_limit = <span class="hljs-number">102400</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * HttpServlet 对象开始运行，接收 HTTP 请求，并回调以下 doXXX 虚函数，</span><br><span class="hljs-comment"> * 调用本函数意味着采用 memcached 来存储 session 数据</span><br><span class="hljs-comment"> * @param memcached_addr &#123;const char*&#125; memcached 服务器地址，格式：IP:PORT</span><br><span class="hljs-comment"> * @param stream &#123;socket_stream*&#125; 含义同上</span><br><span class="hljs-comment"> * @param body_parse &#123;bool&#125; 含义同上</span><br><span class="hljs-comment"> * @param body_limit &#123;int&#125; 含义同上</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回处理结果</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">doRun</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* memcached_addr = <span class="hljs-string">&quot;127.0.0.1:11211&quot;</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">	socket_stream* stream = <span class="hljs-literal">NULL</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">	<span class="hljs-type">bool</span> body_parse = <span class="hljs-literal">true</span>, <span class="hljs-type">int</span> body_limit = <span class="hljs-number">102400</span>)</span></span>;<br><br></code></pre></td></tr></table></figure>
+
+<p>从上面五个虚方法中，可以看到两个重要的类：HttpServletRequest 和 HttpServletResponse。这两个类分别表示 http 请求类及 http 响应类，这两个类都是由 HttpServlet 类对象创建并释放的，所以用户不必创建和销毁这两个类对象实例。下面分别介绍这两个类：</p>
+<h2 id="三、HttpServletRequest-类"><a href="#三、HttpServletRequest-类" class="headerlink" title="三、HttpServletRequest 类"></a>三、HttpServletRequest 类</h2><p>该类主要是与浏览器的请求过程相关，您可以通过该类的方法获得浏览器的请求数据。该类的方法比较多（基本上是参照了 java HttpServlet 的功能方法及名称），所以下面仅介绍几个主要的方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs c++">	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得 HTTP 请求中的参数值，该值已经被 URL 解码且</span><br><span class="hljs-comment">	 * 转换成本地要求的字符集；针对 GET 方法，则是获得</span><br><span class="hljs-comment">	 * URL 中 ? 后面的参数值；针对 POST 方法，则可以获得</span><br><span class="hljs-comment">	 * URL 中 ? 后面的参数值或请求体中的参数值</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span>* <span class="hljs-title">getParameter</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name)</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得 HTTP 客户端请求的某个 cookie 值</span><br><span class="hljs-comment">	 * @param name &#123;const char*&#125; cookie 名称，必须非空</span><br><span class="hljs-comment">	 * @return &#123;const char*&#125; cookie 值，当返回 NULL 时表示</span><br><span class="hljs-comment">	 *  cookie 值不存在</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span>* <span class="hljs-title">getCookieValue</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name)</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得与该 HTTP 会话相关的 HttpSession 对象引用</span><br><span class="hljs-comment">	 * @return &#123;HttpSession&amp;&#125;</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function">HttpSession&amp; <span class="hljs-title">getSession</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得与 HTTP 客户端连接关联的输入流对象引用</span><br><span class="hljs-comment">	 * @return &#123;istream&amp;&#125;</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function">istream&amp; <span class="hljs-title">getInputStream</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得 HTTP 请求数据的数据长度</span><br><span class="hljs-comment">	 * @return &#123;acl_int64&#125; 返回 -1 表示可能为 GET 方法，</span><br><span class="hljs-comment">	 *  或 HTTP 请求头中没有 Content-Length 字段</span><br><span class="hljs-comment">	 */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> WIN32</span><br>	<span class="hljs-function">__int64 <span class="hljs-title">getContentLength</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>	<span class="hljs-function"><span class="hljs-type">long</span> <span class="hljs-type">long</span> <span class="hljs-type">int</span> <span class="hljs-title">getContentLength</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 当 HTTP 请求头中的 Content-Type 为</span><br><span class="hljs-comment">	 * multipart/form-data; boundary=xxx 格式时，说明为文件上传</span><br><span class="hljs-comment">	 * 数据类型，则可以通过此函数获得 http_mime 对象</span><br><span class="hljs-comment">	 * @return &#123;const http_mime*&#125; 返回 NULL 则说明没有 MIME 对象，</span><br><span class="hljs-comment">	 *  返回的值用户不能手工释放，因为在 HttpServletRequest 的析</span><br><span class="hljs-comment">	 *  构中会自动释放</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function">http_mime* <span class="hljs-title">getHttpMime</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得 HTTP 请求数据的类型</span><br><span class="hljs-comment">	 * @return &#123;http_request_t&#125;，一般对 POST 方法中的上传</span><br><span class="hljs-comment">	 *  文件应用而言，需要调用该函数获得是否是上传数据类型</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">http_request_t</span> <span class="hljs-title">getRequestType</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>以上方法一般都是我们在实际对 HttpServletRequest 类方法使用过程中用得较多的。如：</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver">getParmeter： 用来获得 <span class="hljs-keyword">http</span> 请求参数<br>getCookieValue：获得浏览器的 cookie 值<br>getSession：获得该 HttpServlet 类对象的 session 会话<br>getInputStream：获得 <span class="hljs-keyword">http</span> 连接的输入流<br>getContentLength：针对 HTTP POST 请求，此函数获得 HTTP 请求数据体的长度<br>getRequestType：针对 HTTP POST 请求，此函数返回 HTTP 请求数据体的传输方式（普通的 name=<span class="hljs-built_in">value</span> 方式，multipart 上传文件格式以及数据流格式）<br></code></pre></td></tr></table></figure>
+<h2 id="四、HttpServletResponse-类"><a href="#四、HttpServletResponse-类" class="headerlink" title="四、HttpServletResponse 类"></a>四、HttpServletResponse 类</h2><p>该类主要与将您写的程序将处理数据结果返回给浏览器的过程相关，下面也仅介绍该类的一些常用的函数，如果您需要更多的功能，请参数 HttpServletResponse.hpp 头文件。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 响应数据体的 Content-Type 字段值，可字段值可以为：</span><br><span class="hljs-comment"> * text/html 或 text/html; charset=utf8 格式</span><br><span class="hljs-comment"> * @param value &#123;const char*&#125; 字段值</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">setContentType</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* value)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 响应数据体中字符集，当已经在 setContentType 设置</span><br><span class="hljs-comment"> * 了字符集，则就不必再调用本函数设置字符集</span><br><span class="hljs-comment"> * @param charset &#123;const char*&#125; 响应体数据的字符集</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">setCharacterEncoding</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* charset)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 响应头中的状态码：1xx, 2xx, 3xx, 4xx, 5xx</span><br><span class="hljs-comment"> * @param status &#123;int&#125; HTTP 响应状态码, 如：200</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">setStatus</span><span class="hljs-params">(<span class="hljs-type">int</span> status)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 添加 cookie</span><br><span class="hljs-comment"> * @param name &#123;const char*&#125; cookie 名</span><br><span class="hljs-comment"> * @param value &#123;const char*&#125; cookie 值</span><br><span class="hljs-comment"> * @param domain &#123;const char*&#125; cookie 存储域</span><br><span class="hljs-comment"> * @param path &#123;const char*&#125; cookie 存储路径</span><br><span class="hljs-comment"> * @param expires &#123;time_t&#125; cookie 过期时间间隔，当当前时间加</span><br><span class="hljs-comment"> *  该值为 cookie 的过期时间截(秒)</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">addCookie</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* value,</span></span><br><span class="hljs-params"><span class="hljs-function">	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* domain = <span class="hljs-literal">NULL</span>, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* path = <span class="hljs-literal">NULL</span>, <span class="hljs-type">time_t</span> expires = <span class="hljs-number">0</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 发送 HTTP 响应头，用户应该发送数据体前调用此函数将 HTTP</span><br><span class="hljs-comment"> * 响应头发送给客户端</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">sendHeader</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 获得 HTTP 响应对象的输出流对象，用户在调用 sendHeader 发送</span><br><span class="hljs-comment"> * 完 HTTP 响应头后，通过该输出流来发送 HTTP 数据体</span><br><span class="hljs-comment"> * @return &#123;ostream&amp;&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ostream&amp; <span class="hljs-title">getOutputStream</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>setCharacterEncoding：该方法设置 HTTP 响应头的 HTTP 数据体的字符集，如果通过该函数设置了字符集，即使您在返回的 html 数据中重新设置了其它的字符集，浏览器也会优先使用 HTTP 响应头中设置的字符集，所以用户一定得注意这点；</li>
+<li>setContentType：该方法用来设置 HTTP 响应头中的 Content-Type 字段，对于 xml 数据则设置 text&#x2F;xml，对 html 数据则设置 text&#x2F;html，当然您也可以设置 image&#x2F;jpeg 等数据类型；当然，您也可以直接通过该方法在设置数据类型的同时指定数据的字符集，如可以直接写：setContentType(“text&#x2F;html; charset&#x3D;utf8”)，这个用法等同于：setContentType(“text&#x2F;html”); setCharacterEncoding(“utf8”)。</li>
+<li>setStatus：设置 HTTP 响应头的状态码（一般不用设置状态码，除非是您确实需要单独设置）；</li>
+<li>addCookie：在 HTTP 响应头中添加 cookie 内容；</li>
+<li>sendHeader：发送 HTTP 响应头；</li>
+<li>getOutputStream：该函数返回输出流对象，您可以向输出流中直接写 HTTP 响应的数据体（关于 ostream 类的使用请参数头文件：include&#x2F;ostream.hpp）。</li>
+</ul>
+<p>除了以上三个类外，还有一个类比较重要：HttpSession 类，该类主要实现与 session 会话相关的功能：</p>
+<h2 id="五、HttpSession-类"><a href="#五、HttpSession-类" class="headerlink" title="五、HttpSession 类"></a>五、HttpSession 类</h2><p>该类对象实例用户也不必创建与释放，在 HttpServet 类对象内容自动管理该类对象实例。主要用的方法有：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 获得客户端在服务端存储的对应 session 变量名，子类可以重载该方法</span><br><span class="hljs-comment"> * @param name &#123;const char*&#125; session 名，非空</span><br><span class="hljs-comment"> * @return &#123;const char*&#125; session 值，为空说明不存在或内部</span><br><span class="hljs-comment"> *  查询失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span>* <span class="hljs-title">getAttribute</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name)</span> <span class="hljs-type">const</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置服务端对应 session 名的 session 值，子类可以重载该方法</span><br><span class="hljs-comment"> * @param name &#123;const char*&#125; session 名，非空</span><br><span class="hljs-comment"> * @param name &#123;const char*&#125; session 值，非空</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回 false 说明设置失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">setAttribute</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* value)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>只所以将这两个方法声明为虚方法，是因为 HttpSession 的 session 数据存储目前仅支持 memcached，您如果有精力的话可以实现一个子类用来支持其它的数据存储方式。当然您也可以在您实现的子类中实现自己的产生唯一 session id 的方法，即实现如下虚方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-keyword">protected</span>:<br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 创建某个 session 会话的唯一 ID 号，子类可以重载该方法</span><br><span class="hljs-comment">	 * @param buf &#123;char*&#125; 存储结果缓冲区</span><br><span class="hljs-comment">	 * @param len &#123;size_t&#125; buf 缓冲区大小，buf 缓冲区大小建议</span><br><span class="hljs-comment">	 *  64 字节左右</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">createSid</span><span class="hljs-params">(<span class="hljs-type">char</span>* buf, <span class="hljs-type">size_t</span> len)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>好了，上面说了一大堆类及类函数，下面还是以一个具体的示例来说明这些类的用法：</p>
+<h2 id="六、示例"><a href="#六、示例" class="headerlink" title="六、示例"></a>六、示例</h2><p>下面的例子是一个 CGI 例子，编译后可执行程序可以直接放在 apache 的 cgi-bin&#x2F; 目录，用户可以用浏览器访问。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">// http_servlet.cpp : 定义控制台应用程序的入口点。</span><br><span class="hljs-comment">//</span><br><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;lib_acl.hpp&quot;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> acl;<br><br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">http_servlet</span> : <span class="hljs-keyword">public</span> HttpServlet<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">http_servlet</span>(<span class="hljs-type">void</span>)<br>	&#123;<br>	&#125;<br><br>	~<span class="hljs-built_in">http_servlet</span>(<span class="hljs-type">void</span>)<br>	&#123;<br>	&#125;<br><br>	<span class="hljs-comment">// 实现处理 HTTP GET 请求的功能函数</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">doGet</span><span class="hljs-params">(HttpServletRequest&amp; req, HttpServletResponse&amp; res)</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-built_in">doPost</span>(req, res);<br>	&#125;<br><br>	<span class="hljs-comment">// 实现处理 HTTP POST 请求的功能函数</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">doPost</span><span class="hljs-params">(HttpServletRequest&amp; req, HttpServletResponse&amp; res)</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-comment">// 获得某浏览器用户的 session 的某个变量值，如果不存在则设置一个</span><br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* sid = req.<span class="hljs-built_in">getSession</span>().<span class="hljs-built_in">getAttribute</span>(<span class="hljs-string">&quot;sid&quot;</span>);<br>		<span class="hljs-keyword">if</span> (sid == <span class="hljs-literal">NULL</span> || *sid == <span class="hljs-number">0</span>)<br>			req.<span class="hljs-built_in">getSession</span>().<span class="hljs-built_in">setAttribute</span>(<span class="hljs-string">&quot;sid&quot;</span>, <span class="hljs-string">&quot;xxxxxx&quot;</span>);<br><br>		<span class="hljs-comment">// 再取一次该浏览器用户的 session 的某个属性值</span><br>		sid = req.<span class="hljs-built_in">getSession</span>().<span class="hljs-built_in">getAttribute</span>(<span class="hljs-string">&quot;sid&quot;</span>);<br><br>		<span class="hljs-comment">// 取得浏览器发来的两个 cookie 值</span><br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* cookie1 = req.<span class="hljs-built_in">getCookieValue</span>(<span class="hljs-string">&quot;name1&quot;</span>);<br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* cookie2 = req.<span class="hljs-built_in">getCookieValue</span>(<span class="hljs-string">&quot;name2&quot;</span>);<br><br>		<span class="hljs-comment">// 开始创建 HTTP 响应头</span><br><br>		<span class="hljs-comment">// 设置 cookie</span><br>  		res.<span class="hljs-built_in">addCookie</span>(<span class="hljs-string">&quot;name1&quot;</span>, <span class="hljs-string">&quot;value1&quot;</span>);<br><br>		<span class="hljs-comment">// 设置具有作用域和过期时间的 cookie</span><br>		res.<span class="hljs-built_in">addCookie</span>(<span class="hljs-string">&quot;name2&quot;</span>, <span class="hljs-string">&quot;value2&quot;</span>, <span class="hljs-string">&quot;.test.com&quot;</span>, <span class="hljs-string">&quot;/&quot;</span>, <span class="hljs-number">3600</span> * <span class="hljs-number">24</span>);<br>		<span class="hljs-comment">// res.setStatus(200);  // 可以设置返回的状态码</span><br><br>		<span class="hljs-comment">// 两种方式都可以设置字符集</span><br>		<span class="hljs-keyword">if</span> (<span class="hljs-number">0</span>)<br>			res.<span class="hljs-built_in">setContentType</span>(<span class="hljs-string">&quot;text/xml; charset=gb2312&quot;</span>);<br>		<span class="hljs-keyword">else</span> &#123;<br>			<span class="hljs-comment">// 先设置数据类型</span><br>			res.<span class="hljs-built_in">setContentType</span>(<span class="hljs-string">&quot;text/xml&quot;</span>);<br><br>			<span class="hljs-comment">// 再设置数据字符集</span><br>			res.<span class="hljs-built_in">setCharacterEncoding</span>(<span class="hljs-string">&quot;gb2312&quot;</span>);<br>		&#125;<br><br>		<span class="hljs-comment">// 获得浏览器请求的两个参数值</span><br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* param1 = req.<span class="hljs-built_in">getParameter</span>(<span class="hljs-string">&quot;name1&quot;</span>);<br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* param2 = req.<span class="hljs-built_in">getParameter</span>(<span class="hljs-string">&quot;name2&quot;</span>);<br><br>		<span class="hljs-comment">// 创建 xml 格式的数据体</span><br>		xml body;<br>		body.<span class="hljs-built_in">get_root</span>().<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;root&quot;</span>, <span class="hljs-literal">true</span>)<br>			.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;sessions&quot;</span>, <span class="hljs-literal">true</span>)<br>				.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;session&quot;</span>, <span class="hljs-literal">true</span>)<br>					.<span class="hljs-built_in">add_attr</span>(<span class="hljs-string">&quot;sid&quot;</span>, sid ? sid : <span class="hljs-string">&quot;null&quot;</span>)<br>					.<span class="hljs-built_in">get_parent</span>()<br>				.<span class="hljs-built_in">get_parent</span>()<br>			.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;cookies&quot;</span>, <span class="hljs-literal">true</span>)<br>				.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;cookie&quot;</span>, <span class="hljs-literal">true</span>)<br>					.<span class="hljs-built_in">add_attr</span>(<span class="hljs-string">&quot;name1&quot;</span>, cookie1 ? cookie1 : <span class="hljs-string">&quot;null&quot;</span>)<br>					.<span class="hljs-built_in">get_parent</span>()<br>				.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;cookie&quot;</span>, <span class="hljs-literal">true</span>)<br>					.<span class="hljs-built_in">add_attr</span>(<span class="hljs-string">&quot;name2&quot;</span>, cookie2 ? cookie2 : <span class="hljs-string">&quot;null&quot;</span>)<br>					.<span class="hljs-built_in">get_parent</span>()<br>				.<span class="hljs-built_in">get_parent</span>()<br>			.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;params&quot;</span>, <span class="hljs-literal">true</span>)<br>				.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;param&quot;</span>, <span class="hljs-literal">true</span>)<br>					.<span class="hljs-built_in">add_attr</span>(<span class="hljs-string">&quot;name1&quot;</span>, param1 ? param1 : <span class="hljs-string">&quot;null&quot;</span>)<br>					.<span class="hljs-built_in">get_parent</span>()<br>				.<span class="hljs-built_in">add_child</span>(<span class="hljs-string">&quot;param&quot;</span>, <span class="hljs-literal">true</span>)<br>					.<span class="hljs-built_in">add_attr</span>(<span class="hljs-string">&quot;name2&quot;</span>, param2 ? param2 : <span class="hljs-string">&quot;null&quot;</span>);<br>		string buf;<br>		body.<span class="hljs-built_in">build_xml</span>(buf);<br>		<span class="hljs-comment">// 在http 响应头中设置数据体长度</span><br>		res.<span class="hljs-built_in">setContentLength</span>(buf.<span class="hljs-built_in">length</span>());<br>		<span class="hljs-comment">// 发送 http 响应头</span><br>		<span class="hljs-keyword">if</span> (res.<span class="hljs-built_in">sendHeader</span>() == <span class="hljs-literal">false</span>)<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		<span class="hljs-comment">// 发送 http 响应体</span><br>		<span class="hljs-keyword">if</span> (res.<span class="hljs-built_in">write</span>(buf) == <span class="hljs-literal">false</span>)<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> WIN32</span><br>	acl::<span class="hljs-built_in">acl_cpp_init</span>();  <span class="hljs-comment">// win32 环境下需要初始化库</span><br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br>	http_servlet servle;<br><br>	<span class="hljs-comment">// cgi 开始运行</span><br>	servlet.<span class="hljs-built_in">doRun</span>(<span class="hljs-string">&quot;127.0.0.1:11211&quot;</span>);  <span class="hljs-comment">// 开始运行，并设定 memcached 的服务地址为：127.0.0.1:11211</span><br><br>	<span class="hljs-comment">// 运行完毕，程序退出</span><br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>经常使用 Java HttpServlet 等类进行 web 编程的用户对上面的代码一定不会感到陌生，但它的的确确是一个 CGI 程序，可以放在 Apache 及支持 CGI 的 Webserver 下运行。当然，大家应该都清楚 CGI 在运行时因进程切换而导致了效率较为低下，在另一篇文章《使用 acl_cpp 的 HttpServlet 类及服务器框架编写WEB服务器程序 》中展示了用上面的 http_servlet 类并结合 acl_cpp 的服务器模型实现的一个WEB服务器的例子，效率比 CGI 要高的多(效率也应比 FCGI高，因为其少了 Webserver 层的过滤)；文章《acl_cpp web 编程之文件上传 》中举例讲述了在服务端如何使用 acl_cpp 库处理浏览器上传文件的功能。</p>
+<p>acl 下载<br>github: <a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>gitee: <a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/http%E5%BC%80%E5%8F%91/" class="category-chain-item">http开发</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/http/">#http</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>用C++实现类似于JAVA HttpServlet 的编程接口</div>
+      <div>https://acl-dev.cn/2012/05/20/http_servlet/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2012年5月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2012/05/21/http_web/" title="使用 acl_cpp 的 HttpServlet 类及服务器框架编写WEB服务器程序">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用 acl_cpp 的 HttpServlet 类及服务器框架编写WEB服务器程序</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2012/04/04/aio/" title="非阻塞网络编程实例讲解">
+                        <span class="hidden-mobile">非阻塞网络编程实例讲解</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

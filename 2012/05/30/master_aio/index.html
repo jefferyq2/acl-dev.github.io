@@ -1,0 +1,751 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="在文章《使用 acl::master_threads 类编写多进程多线程服务器程序》讲述了如何编写 LINUX 平台下阻塞式服务器程序的多线程。虽然这种模式都可以处理并发任务，并且效率也不低，但是毕竟线程和进程资源是操作系统的宝贵资源，如果要支持非常高的并发请求，则会因为系统限制而不能创建更多的进程或线程。大家常见的 webserver Nginx 就是以支持高并发而闻名，Nginx 本身就是非阻">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用 acl::master_aio 类编写高并发非阻塞服务器程序">
+<meta property="og:url" content="https://acl-dev.cn/2012/05/30/master_aio/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="在文章《使用 acl::master_threads 类编写多进程多线程服务器程序》讲述了如何编写 LINUX 平台下阻塞式服务器程序的多线程。虽然这种模式都可以处理并发任务，并且效率也不低，但是毕竟线程和进程资源是操作系统的宝贵资源，如果要支持非常高的并发请求，则会因为系统限制而不能创建更多的进程或线程。大家常见的 webserver Nginx 就是以支持高并发而闻名，Nginx 本身就是非阻">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2012-05-30T14:15:00.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.181Z">
+<meta property="article:author" content="zsxxsz">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>用 acl::master_aio 类编写高并发非阻塞服务器程序 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="用 acl::master_aio 类编写高并发非阻塞服务器程序"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2012-05-30 22:15" pubdate>
+          2012年5月30日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          12k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          98 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">用 acl::master_aio 类编写高并发非阻塞服务器程序</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在文章《使用 acl::master_threads 类编写多进程多线程服务器程序》讲述了如何编写 LINUX 平台下阻塞式服务器程序的多线程。虽然这种模式都可以处理并发任务，并且效率也不低，但是毕竟线程和进程资源是操作系统的宝贵资源，如果要支持非常高的并发请求，则会因为系统限制而不能创建更多的进程或线程。大家常见的 webserver Nginx 就是以支持高并发而闻名，Nginx 本身就是非阻塞设计的典型应用，当然还有很多其它服务器程序也是非阻塞的：ircd、Squid、Varnish、Bind 等。</p>
+<p>因为非阻塞程序编写有一定难度，所以现在有人在写非阻塞程序时不得不转向 Erlang、Nodejs 等一些脚本式语言，要想用 C&#x2F;C++ 来实现非阻塞程序还是有些难度：系统级 API 过于底层、容易出错、难于调试。虽然也有一些 C++ 库（象ACE）提供了非阻塞库，但这些库的入门门槛还是挺高的。根据本人多年在非阻塞编程方面的经验，总结出一套比较实用的 C&#x2F;C++ 非阻塞函数库，本文就讲述如果使用 acl_cpp 库中的 master_aio 类来编写非阻塞服务器程序（该服务器程序可以规定启动最大进程的个数，其中每个进程是一个独立的非阻塞进程）。在文章《非阻塞网络编程实例讲解》中给出了一个非阻塞网络程序的示例，您可以参考一下。</p>
+<h2 id="一、类接口定义"><a href="#一、类接口定义" class="headerlink" title="一、类接口定义"></a>一、类接口定义</h2><p>master_aio 是一个纯虚类，其中定义的接口需要子类实现，子类实例必须只能创建一个实例，接口如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 纯虚函数：当接收到一个客户端连接时调用此函数</span><br><span class="hljs-comment"> * @param stream &#123;aio_socket_stream*&#125; 新接收到的客户端异步流对象</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 该函数如果返回 false 则通知服务器框架不再接收</span><br><span class="hljs-comment"> *  远程客户端连接，否则继续接收客户端连接</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">on_accept</span><span class="hljs-params">(aio_socket_stream* stream)</span> </span>= <span class="hljs-number">0</span>;<br></code></pre></td></tr></table></figure>
+
+<p>master_aio 提供了四个外部方法，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 开始运行，调用该函数是指该服务进程是在 acl_master 服务框架</span><br><span class="hljs-comment"> * 控制之下运行，一般用于生产机状态</span><br><span class="hljs-comment"> * @param argc &#123;int&#125; 从 main 中传递的第一个参数，表示参数个数</span><br><span class="hljs-comment"> * @param argv &#123;char**&#125; 从 main 中传递的第二个参数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">run_daemon</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>** argv)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在单独运行时的处理函数，用户可以调用此函数进行一些必要的调试工作</span><br><span class="hljs-comment"> * @param addr &#123;const char*&#125; 服务监听地址</span><br><span class="hljs-comment"> * @param conf &#123;const char*&#125; 配置文件全路径</span><br><span class="hljs-comment"> * @param ht &#123;aio_handle_type&#125; 事件引擎的类型</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 监听是否成功</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">run_alone</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* conf = <span class="hljs-literal">NULL</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">	aio_handle_type ht = ENGINE_SELECT)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 获得异步IO的事件引擎句柄，通过此句柄，用户可以设置定时器等功能</span><br><span class="hljs-comment"> * @return &#123;aio_handle*&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">aio_handle* <span class="hljs-title">get_handle</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在 run_alone 模式下，通知服务器框架关闭引擎，退出程序</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">stop</span><span class="hljs-params">()</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>从上面两个函数，可以看出 master_aio 类当在生产环境下（由 acl_master 进程统一控制调度），用户需要调用 run_daemon 函数；如果用户在开发过程中需要手工进行调试，则可以调用 run_alone 函数。</p>
+<p>master_aio 的基类 master_base 的几个虚接口如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当进程切换用户身份前调用的回调函数，可以在此函数中做一些</span><br><span class="hljs-comment"> * 用户身份为 root 的权限操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">proc_pre_jail</span><span class="hljs-params">()</span> </span>&#123;&#125;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当进程切换用户身份后调用的回调函数，此函数被调用时，进程</span><br><span class="hljs-comment"> * 的权限为普通受限级别</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">proc_on_init</span><span class="hljs-params">()</span> </span>&#123;&#125;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当进程退出前调用的回调函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">proc_on_exit</span><span class="hljs-params">()</span> </span>&#123;&#125;<br><br><span class="hljs-comment">// 在 run_alone 状态下运行前，调用此函数初始化一些配置</span><br></code></pre></td></tr></table></figure>
+
+<p>基类的这几个虚函数用户可以根据需要调用。</p>
+<p>另外，基类 master_base 还提供了几个用来读配置选项的函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 bool 类型的配置项</span><br><span class="hljs-comment"> * @param table &#123;master_bool_tbl*&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_cfg_bool</span><span class="hljs-params">(master_bool_tbl* table)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 int 类型的配置项</span><br><span class="hljs-comment"> * @param table &#123;master_int_tbl*&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_cfg_int</span><span class="hljs-params">(master_int_tbl* table)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 int64 类型的配置项</span><br><span class="hljs-comment"> * @param table &#123;master_int64_tbl*&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_cfg_int64</span><span class="hljs-params">(master_int64_tbl* table)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 字符串 类型的配置项</span><br><span class="hljs-comment"> * @param table &#123;master_str_tbl*&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_cfg_str</span><span class="hljs-params">(master_str_tbl* table)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="二、示例源程序"><a href="#二、示例源程序" class="headerlink" title="二、示例源程序"></a>二、示例源程序</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">// master_aio.cpp : 定义控制台应用程序的入口点。</span><br><span class="hljs-comment">//</span><br><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;stdafx.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;lib_acl.hpp&quot;</span></span><br><br><span class="hljs-type">static</span> <span class="hljs-type">char</span> *var_cfg_debug_msg;<br><br><span class="hljs-type">static</span> acl::master_str_tbl var_conf_str_tab[] = &#123;<br>	&#123; <span class="hljs-string">&quot;debug_msg&quot;</span>, <span class="hljs-string">&quot;test_msg&quot;</span>, &amp;var_cfg_debug_msg &#125;,<br><br>	&#123; <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span> &#125;<br>&#125;;<br><br><span class="hljs-type">static</span> <span class="hljs-type">int</span>  var_cfg_debug_enable;<br><span class="hljs-type">static</span> <span class="hljs-type">int</span>  var_cfg_keep_alive;<br><span class="hljs-type">static</span> <span class="hljs-type">int</span>  var_cfg_send_banner;<br><br><span class="hljs-type">static</span> acl::master_bool_tbl var_conf_bool_tab[] = &#123;<br>	&#123; <span class="hljs-string">&quot;debug_enable&quot;</span>, <span class="hljs-number">1</span>, &amp;var_cfg_debug_enable &#125;,<br>	&#123; <span class="hljs-string">&quot;keep_alive&quot;</span>, <span class="hljs-number">1</span>, &amp;var_cfg_keep_alive &#125;,<br>	&#123; <span class="hljs-string">&quot;send_banner&quot;</span>, <span class="hljs-number">1</span>, &amp;var_cfg_send_banner &#125;,<br><br>	&#123; <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span> &#125;<br>&#125;;<br><br><span class="hljs-type">static</span> <span class="hljs-type">int</span>  var_cfg_io_timeout;<br><br><span class="hljs-type">static</span> acl::master_int_tbl var_conf_int_tab[] = &#123;<br>	&#123; <span class="hljs-string">&quot;io_timeout&quot;</span>, <span class="hljs-number">120</span>, &amp;var_cfg_io_timeout, <span class="hljs-number">0</span>, <span class="hljs-number">0</span> &#125;,<br><br>	&#123; <span class="hljs-number">0</span>, <span class="hljs-number">0</span> , <span class="hljs-number">0</span> , <span class="hljs-number">0</span>, <span class="hljs-number">0</span> &#125;<br>&#125;;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-title">void</span> <span class="hljs-params">(*format)</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>*, ...)</span> </span>= acl::log::msg1;<br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> acl;<br><br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 延迟读回调处理类</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">timer_reader</span>: <span class="hljs-keyword">public</span> aio_timer_reader<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">timer_reader</span>(<span class="hljs-type">int</span> delay)<br>	&#123;<br>		delay_ = delay;<br>		format(<span class="hljs-string">&quot;timer_reader init, delay: %d\r\n&quot;</span>, delay);<br>	&#125;<br><br>	~<span class="hljs-built_in">timer_reader</span>()<br>	&#123;<br>	&#125;<br><br>	<span class="hljs-comment">// aio_timer_reader 的子类必须重载 destroy 方法</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">destroy</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;timer_reader delete, delay: %d\r\n&quot;</span>, delay_);<br>		<span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 重载基类回调方法</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">timer_callback</span><span class="hljs-params">(<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> id)</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;timer_reader(%u): timer_callback, delay: %d\r\n&quot;</span>, id, delay_);<br><br>		<span class="hljs-comment">// 调用基类的处理过程</span><br>		aio_timer_reader::<span class="hljs-built_in">timer_callback</span>(id);<br>	&#125;<br><br><span class="hljs-keyword">private</span>:<br>	<span class="hljs-type">int</span>   delay_;<br>&#125;;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 延迟写回调处理类</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">timer_writer</span>: <span class="hljs-keyword">public</span> aio_timer_writer<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">timer_writer</span>(<span class="hljs-type">int</span> delay)<br>	&#123;<br>		delay_ = delay;<br>		format(<span class="hljs-string">&quot;timer_writer init, delay: %d\r\n&quot;</span>, delay);<br>	&#125;<br><br>	~<span class="hljs-built_in">timer_writer</span>()<br>	&#123;<br>	&#125;<br><br>	<span class="hljs-comment">// aio_timer_reader 的子类必须重载 destroy 方法</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">destroy</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;timer_writer delete, delay: %d\r\n&quot;</span>, delay_);<br>		<span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 重载基类回调方法</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">timer_callback</span><span class="hljs-params">(<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> id)</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;timer_writer(%u): timer_callback, delay: %u\r\n&quot;</span>, id, delay_);<br><br>		<span class="hljs-comment">// 调用基类的处理过程</span><br>		aio_timer_writer::<span class="hljs-built_in">timer_callback</span>(id);<br>	&#125;<br><br><span class="hljs-keyword">private</span>:<br>	<span class="hljs-type">int</span>   delay_;<br>&#125;;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">timer_test</span> : <span class="hljs-keyword">public</span> aio_timer_callback<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">timer_test</span>() &#123;&#125;<br>	~<span class="hljs-built_in">timer_test</span>() &#123;&#125;<br><span class="hljs-keyword">protected</span>:<br>	<span class="hljs-comment">// 基类纯虚函数</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">timer_callback</span><span class="hljs-params">(<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> id)</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;id: %u\r\n&quot;</span>, id);<br>	&#125;<br><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">destroy</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>;<br>		format(<span class="hljs-string">&quot;timer delete now\r\n&quot;</span>);<br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 异步客户端流的回调类的子类</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">io_callback</span> : <span class="hljs-keyword">public</span> aio_callback<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">io_callback</span>(aio_socket_stream* client)<br>		: <span class="hljs-built_in">client_</span>(client)<br>		, <span class="hljs-built_in">i_</span>(<span class="hljs-number">0</span>)<br>	&#123;<br>	&#125;<br><br>	~<span class="hljs-built_in">io_callback</span>()<br>	&#123;<br>		format(<span class="hljs-string">&quot;delete io_callback now ...\r\n&quot;</span>);<br>	&#125;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 实现父类中的虚函数，客户端流的读成功回调过程</span><br><span class="hljs-comment">	 * @param data &#123;char*&#125; 读到的数据地址</span><br><span class="hljs-comment">	 * @param len &#123;int&#125; 读到的数据长度</span><br><span class="hljs-comment">	 * @return &#123;bool&#125; 返回 true 表示继续，否则希望关闭该异步流</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">read_callback</span><span class="hljs-params">(<span class="hljs-type">char</span>* data, <span class="hljs-type">int</span> len)</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-keyword">if</span> (++i_ &lt; <span class="hljs-number">10</span>)<br>			format(<span class="hljs-string">&quot;&gt;&gt;gets(i: %d): %s\r\n&quot;</span>, i_, data);<br><br>		<span class="hljs-comment">// 如果远程客户端希望退出，则关闭之</span><br>		<span class="hljs-keyword">if</span> (<span class="hljs-built_in">strncmp</span>(data, <span class="hljs-string">&quot;quit&quot;</span>, <span class="hljs-number">4</span>) == <span class="hljs-number">0</span>)<br>		&#123;<br>			client_-&gt;format(<span class="hljs-string">&quot;Bye!\r\n&quot;</span>);<br>			client_-&gt;<span class="hljs-built_in">close</span>();<br>		&#125;<br><br>		<span class="hljs-comment">// 如果远程客户端希望服务端也关闭，则中止异步事件过程</span><br>		<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strncmp</span>(data, <span class="hljs-string">&quot;stop&quot;</span>, <span class="hljs-number">4</span>) == <span class="hljs-number">0</span>)<br>		&#123;<br>			client_-&gt;format(<span class="hljs-string">&quot;Stop now!\r\n&quot;</span>);<br>			client_-&gt;<span class="hljs-built_in">close</span>();  <span class="hljs-comment">// 关闭远程异步流</span><br><br>			<span class="hljs-comment">// 通知异步引擎关闭循环过程</span><br>			client_-&gt;<span class="hljs-built_in">get_handle</span>().<span class="hljs-built_in">stop</span>();<br>		&#125;<br><br>		<span class="hljs-comment">// 向远程客户端回写收到的数据</span><br><br>		<span class="hljs-type">int</span>   delay = <span class="hljs-number">0</span>;<br><br>		<span class="hljs-keyword">if</span> (<span class="hljs-built_in">strncmp</span>(data, <span class="hljs-string">&quot;write_delay&quot;</span>, <span class="hljs-built_in">strlen</span>(<span class="hljs-string">&quot;write_delay&quot;</span>)) == <span class="hljs-number">0</span>)<br>		&#123;<br>			<span class="hljs-comment">// 延迟写过程</span><br><br>			<span class="hljs-type">const</span> <span class="hljs-type">char</span>* ptr = data + <span class="hljs-built_in">strlen</span>(<span class="hljs-string">&quot;write_delay&quot;</span>);<br>			delay = <span class="hljs-built_in">atoi</span>(ptr);<br>			<span class="hljs-keyword">if</span> (delay &gt; <span class="hljs-number">0</span>)<br>			&#123;<br>				format(<span class="hljs-string">&quot;&gt;&gt; write delay %d second ...\r\n&quot;</span>, delay);<br>				timer_writer* timer = <span class="hljs-keyword">new</span> <span class="hljs-built_in">timer_writer</span>(delay);<br>				client_-&gt;<span class="hljs-built_in">write</span>(data, len, delay * <span class="hljs-number">1000000</span>, timer);<br>				client_-&gt;<span class="hljs-built_in">gets</span>(<span class="hljs-number">10</span>, <span class="hljs-literal">false</span>);<br>				<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>			&#125;<br>		&#125;<br>		<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strncmp</span>(data, <span class="hljs-string">&quot;read_delay&quot;</span>, <span class="hljs-built_in">strlen</span>(<span class="hljs-string">&quot;read_delay&quot;</span>)) == <span class="hljs-number">0</span>)<br>		&#123;<br>			<span class="hljs-comment">// 延迟读过程</span><br><br>			<span class="hljs-type">const</span> <span class="hljs-type">char</span>* ptr = data + <span class="hljs-built_in">strlen</span>(<span class="hljs-string">&quot;read_delay&quot;</span>);<br>			delay = <span class="hljs-built_in">atoi</span>(ptr);<br>			<span class="hljs-keyword">if</span> (delay &gt; <span class="hljs-number">0</span>)<br>			&#123;<br>				client_-&gt;<span class="hljs-built_in">write</span>(data, len);<br>				format(<span class="hljs-string">&quot;&gt;&gt; read delay %d second ...\r\n&quot;</span>, delay);<br>				timer_reader* timer = <span class="hljs-keyword">new</span> <span class="hljs-built_in">timer_reader</span>(delay);<br>				client_-&gt;<span class="hljs-built_in">gets</span>(<span class="hljs-number">10</span>, <span class="hljs-literal">false</span>, delay * <span class="hljs-number">1000000</span>, timer);<br>				<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>			&#125;<br>		&#125;<br><br>		client_-&gt;<span class="hljs-built_in">write</span>(data, len);<br>		<span class="hljs-comment">//client_-&gt;gets(10, false);</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 实现父类中的虚函数，客户端流的写成功回调过程</span><br><span class="hljs-comment">	 * @return &#123;bool&#125; 返回 true 表示继续，否则希望关闭该异步流</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">write_callback</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 实现父类中的虚函数，客户端流的关闭回调过程</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">close_callback</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-comment">// 必须在此处删除该动态分配的回调类对象以防止内存泄露</span><br>		<span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>;<br>	&#125;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 实现父类中的虚函数，客户端流的超时回调过程</span><br><span class="hljs-comment">	 * @return &#123;bool&#125; 返回 true 表示继续，否则希望关闭该异步流</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">timeout_callback</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;Timeout ...\r\n&quot;</span>);<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br><span class="hljs-keyword">private</span>:<br>	aio_socket_stream* client_;<br>	<span class="hljs-type">int</span>   i_;<br>&#125;;<br><br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">master_aio_test</span> : <span class="hljs-keyword">public</span> master_aio<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">master_aio_test</span>() &#123; timer_test_ = <span class="hljs-keyword">new</span> <span class="hljs-built_in">timer_test</span>(); &#125;<br><br>	~<span class="hljs-built_in">master_aio_test</span>() &#123; handle_-&gt;<span class="hljs-built_in">keep_timer</span>(<span class="hljs-literal">false</span>); &#125;<br><br><span class="hljs-keyword">protected</span>:<br>	<span class="hljs-comment">// 基类纯虚函数：当接收到一个新的连接时调用此函数</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">on_accept</span><span class="hljs-params">(aio_socket_stream* client)</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-comment">// 创建异步客户端流的回调对象并与该异步流进行绑定</span><br>		io_callback* callback = <span class="hljs-keyword">new</span> <span class="hljs-built_in">io_callback</span>(client);<br><br>		<span class="hljs-comment">// 注册异步流的读回调过程</span><br>		client-&gt;<span class="hljs-built_in">add_read_callback</span>(callback);<br><br>		<span class="hljs-comment">// 注册异步流的写回调过程</span><br>		client-&gt;<span class="hljs-built_in">add_write_callback</span>(callback);<br><br>		<span class="hljs-comment">// 注册异步流的关闭回调过程</span><br>		client-&gt;<span class="hljs-built_in">add_close_callback</span>(callback);<br><br>		<span class="hljs-comment">// 注册异步流的超时回调过程</span><br>		client-&gt;<span class="hljs-built_in">add_timeout_callback</span>(callback);<br><br>		<span class="hljs-comment">// 写欢迎信息</span><br>		<span class="hljs-keyword">if</span> (var_cfg_send_banner)<br>			client-&gt;format(<span class="hljs-string">&quot;hello, you&#x27;re welcome\r\n&quot;</span>);<br><br>		<span class="hljs-comment">// 从异步流读一行数据</span><br>		client-&gt;<span class="hljs-built_in">gets</span>(<span class="hljs-number">10</span>, <span class="hljs-literal">false</span>);<br>		<span class="hljs-comment">//client-&gt;read();</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 基类虚函数：服务进程切换用户身份前调用此函数</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">proc_pre_jail</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;proc_pre_jail\r\n&quot;</span>);<br>		<span class="hljs-comment">// 只有当程序启动后才能获得异步引擎句柄</span><br>		handle_ = <span class="hljs-built_in">get_handle</span>();<br>		handle_-&gt;<span class="hljs-built_in">keep_timer</span>(<span class="hljs-literal">true</span>); <span class="hljs-comment">// 允许定时器被重复触发</span><br>		<span class="hljs-comment">// 设置第一个定时任务，每隔1秒触发一次，定时任务ID为0</span><br>		handle_-&gt;<span class="hljs-built_in">set_timer</span>(timer_test_, <span class="hljs-number">1000000</span>, <span class="hljs-number">0</span>);<br>	&#125;<br><br>	<span class="hljs-comment">// 基类虚函数：服务进程切换用户身份后调用此函数</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">proc_on_init</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;proc init\r\n&quot;</span>);<br>		<span class="hljs-comment">// 设置第二个定时任务，每隔2秒触发一次，定时任务ID为1</span><br>		handle_-&gt;<span class="hljs-built_in">set_timer</span>(timer_test_, <span class="hljs-number">2000000</span>, <span class="hljs-number">1</span>);<br>	&#125;<br><br>	<span class="hljs-comment">// 基类虚函数：服务进程退出前调用此函数</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">proc_on_exit</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		format(<span class="hljs-string">&quot;proc exit\r\n&quot;</span>);<br>	&#125;<br><span class="hljs-keyword">private</span>:<br>	timer_test* timer_test_;<br>	aio_handle* handle_;<br>&#125;;<br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>	master_aio_test ma;  <span class="hljs-comment">// master_aio 要求只能起一个实例</span><br><br>	<span class="hljs-comment">// 设置配置参数表</span><br>	ma.<span class="hljs-built_in">set_cfg_int</span>(var_conf_int_tab);<br>	ma.<span class="hljs-built_in">set_cfg_int64</span>(<span class="hljs-literal">NULL</span>);<br>	ma.<span class="hljs-built_in">set_cfg_str</span>(var_conf_str_tab);<br>	ma.<span class="hljs-built_in">set_cfg_bool</span>(var_conf_bool_tab);<br><br>	<span class="hljs-comment">// 开始运行</span><br><br>	<span class="hljs-keyword">if</span> (argc &gt;= <span class="hljs-number">2</span> &amp;&amp; <span class="hljs-built_in">strcmp</span>(argv[<span class="hljs-number">1</span>], <span class="hljs-string">&quot;alone&quot;</span>) == <span class="hljs-number">0</span>)<br>	&#123;<br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr = <span class="hljs-string">&quot;127.0.0.1:8888&quot;</span>;<br><br>		<span class="hljs-keyword">if</span> (argc &gt;= <span class="hljs-number">3</span>)<br>			addr = argv[<span class="hljs-number">2</span>];<br><br>		format = (<span class="hljs-built_in">void</span> (*)(<span class="hljs-type">const</span> <span class="hljs-type">char</span>*, ...)) printf;<br>		format(<span class="hljs-string">&quot;listen: %s now\r\n&quot;</span>, addr);<br>		ma.<span class="hljs-built_in">run_alone</span>(addr);  <span class="hljs-comment">// 单独运行方式</span><br>	&#125;<br>	<span class="hljs-keyword">else</span><br>		ma.<span class="hljs-built_in">run_daemon</span>(argc, argv);  <span class="hljs-comment">// acl_master 控制模式运行</span><br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>该示例主要实现几个功能：接收一行数据并回写该数据、延迟回写所读的数据、延迟读下一行数据、设置定时器的定时任务。因为 master_aio 类是按非阻塞模式设计的（其实，该类主要对 acl 库中的非阻塞框架库用 C++ 进行了封装），所以该例子可以支持非常大的并发请求。可以通过配置文件指定系统事件 API 选择采用 select&#x2F;poll&#x2F;epoll 中的一种、规定进程的空闲退出时间、预先启动子进程的数量等参数。该例子所在目录：acl_cpp&#x2F;samples&#x2F;master_aio。</p>
+<p>在这个例子中，当服务端接收到客户端连接后，非阻塞框架会通过虚函数  on_accept 回调子类处理过程，子类需要在这个虚函数中需要将一个处理 IO 过程的类实例与这个非阻塞连接流进行绑定（通过 add_xxx_callback 方式），其中处理 IO 过程的类的基类定义为：aio_callback，子类需要实现其中的虚方法。</p>
+<h2 id="三、配置文件及程序安装"><a href="#三、配置文件及程序安装" class="headerlink" title="三、配置文件及程序安装"></a>三、配置文件及程序安装</h2><p>打开 acl_cpp&#x2F;samples&#x2F;master_aio&#x2F;aio_echo.cf 配置文件，就其中几个配置参数说明一下：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-comment">## 由 acl_master 用来控制服务进程池的配置项</span><br><span class="hljs-comment"># 为 no 表示启用该进程服务，为 yes 表示禁止该服务进程</span><br><span class="hljs-attr">master_disable</span> = <span class="hljs-literal">no</span><br><br><span class="hljs-comment"># 表示本服务器进程监听 127.0.0.1 的 8888 端口</span><br><span class="hljs-attr">master_service</span> = <span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span>:<span class="hljs-number">8888</span><br><br><span class="hljs-comment"># 表示是 TCP 套接口服务类型</span><br><span class="hljs-attr">master_type</span> = inet<br><br><span class="hljs-comment"># 表示该服务进程池的最大进程数为 2</span><br><span class="hljs-attr">master_maxproc</span> = <span class="hljs-number">2</span><br><br><span class="hljs-comment"># 需要预先启动的进程数，该值不应大于 master_maxproc</span><br><span class="hljs-attr">master_prefork</span> = <span class="hljs-number">2</span><br><br><span class="hljs-comment"># 进程程序名</span><br><span class="hljs-attr">master_command</span> = aio_echo<br><br><span class="hljs-comment"># 进程日志记录文件，其中 &#123;install_path&#125; 需要用实际的安装路径代替</span><br><span class="hljs-attr">master_log</span> = &#123;install_path&#125;/var/log/aio_echo.log<br> <br><span class="hljs-comment"># 用 select 进行循环时的时间间隔</span><br><span class="hljs-comment"># 单位为秒</span><br><span class="hljs-attr">aio_delay_sec</span> = <span class="hljs-number">1</span><br><span class="hljs-comment"># 单位为微秒</span><br><span class="hljs-attr">aio_delay_usec</span> = <span class="hljs-number">500</span><br><span class="hljs-comment"># 采用事件循环的方式: select(default), poll, kernel(epoll/devpoll/kqueue)</span><br><span class="hljs-attr">aio_event_mode</span> = select<br><span class="hljs-comment"># 是否将 socket 接收与IO功能分开: yes/no, 如果为 yes 可以大大提高 accept() 速度</span><br><span class="hljs-attr">aio_accept_alone</span> = <span class="hljs-literal">yes</span><br><span class="hljs-comment"># 线程池的最大线程数, 如果该值为0则表示采用单线程非阻塞模式.</span><br><span class="hljs-attr">aio_max_threads</span> = <span class="hljs-number">0</span><br><span class="hljs-comment"># 每个线程的空闲时间.</span><br><span class="hljs-attr">aio_thread_idle_limit</span> = <span class="hljs-number">60</span><br><span class="hljs-comment"># 允许访问的客户端IP地址范围</span><br><span class="hljs-attr">aio_access_allow</span> = <span class="hljs-number">10.0</span>.<span class="hljs-number">0.1</span>:<span class="hljs-number">255.255</span>.<span class="hljs-number">255.255</span>, <span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span>:<span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span><br><span class="hljs-comment"># 当 acl_master 退出时，如果该值置1则该程序不等所有连接处理完毕便立即退出</span><br><span class="hljs-attr">aio_quick_abort</span> = <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+
+<p>例如当 acl_master 服务器框架程序的安装目录为：&#x2F;opt&#x2F;acl，则：</p>
+<ul>
+<li>&#x2F;opt&#x2F;acl&#x2F;libexec： 该目录存储服务器程序（acl_master 程序也存放在该目录下）；</li>
+<li>&#x2F;opt&#x2F;acl&#x2F;conf：该目录存放 acl_master 程序配置文件 main.cf；</li>
+<li>&#x2F;opt&#x2F;acl&#x2F;conf&#x2F;service：该目录存放服务子进程的程序配置文件，该路径由 main.cf 文件指定；</li>
+<li>&#x2F;opt&#x2F;acl&#x2F;var&#x2F;log：该目录存放日志文件；</li>
+<li>&#x2F;opt&#x2F;acl&#x2F;var&#x2F;pid：该目录存放进程号文件。</li>
+</ul>
+<p>该程序编译通过后，需要把可执行程序放在 &#x2F;opt&#x2F;acl&#x2F;libexec 目录下，把配置文件放在 &#x2F;opt&#x2F;acl&#x2F;conf&#x2F;service 目录下。</p>
+<p>在 &#x2F;opt&#x2F;acl&#x2F;sh 下有启动&#x2F;停止 acl_master 服务进程的控制脚本；运行脚本：.&#x2F;start.sh，然后请用下面方法检查服务是否已经启动：</p>
+<p>ps -ef|grep acl_master # 查看服务器控制进程是否已经启动</p>
+<p>netstat -nap|grep LISTEN|grep 5001 # 查看服务端口号是否已经被监听</p>
+<p>当然，您也可以查看 &#x2F;opt&#x2F;acl&#x2F;var&#x2F;log&#x2F;acl_master 日志文件，查看服务进程的启动过程及监听服务是否正常监听。</p>
+<p>可以命令行如下测试：telnet 127.0.0.1 8888</p>
+<p>github: <a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>gitee: <a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl">https://gitee.com/acl-dev/acl</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9C%8D%E5%8A%A1%E7%BC%96%E7%A8%8B/" class="category-chain-item">服务编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>用 acl::master_aio 类编写高并发非阻塞服务器程序</div>
+      <div>https://acl-dev.cn/2012/05/30/master_aio/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2012年5月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2012/07/13/aio_rpc/" title="acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2012/05/26/master_threads/" title="使用 acl::master_threads 类编写多进程多线程服务器程序">
+                        <span class="hidden-mobile">使用 acl::master_threads 类编写多进程多线程服务器程序</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

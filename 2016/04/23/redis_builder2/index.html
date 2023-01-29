@@ -1,0 +1,765 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="在 &lt;一个 C++ redis 集群管理工具&gt; 中主要讲述了如何使用 redis_builder 工具创建 redis 集群的过程，除此之外，该工具还具有更为强大的 redis 客户端管理功能（相对于官方提供的 redis-cli功能要强大的多）。本文主要讲解使用 redis_builder 以交互方式管理 redis 集群的过程。 一、启动 redis_builder 的交互过程只要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 redis_builder 管理 redis 集群">
+<meta property="og:url" content="https://acl-dev.cn/2016/04/23/redis_builder2/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="在 &lt;一个 C++ redis 集群管理工具&gt; 中主要讲述了如何使用 redis_builder 工具创建 redis 集群的过程，除此之外，该工具还具有更为强大的 redis 客户端管理功能（相对于官方提供的 redis-cli功能要强大的多）。本文主要讲解使用 redis_builder 以交互方式管理 redis 集群的过程。 一、启动 redis_builder 的交互过程只要">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_builder.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_commands.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_commands2.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_help.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_get.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_hash_get.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_dbsize.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_nodes.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_set.png">
+<meta property="og:image" content="https://acl-dev.cn/img/redis_status.png">
+<meta property="article:published_time" content="2016-04-23T11:59:00.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.179Z">
+<meta property="article:author" content="zsxxsz">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://acl-dev.cn/img/redis_builder.png">
+  
+  
+  
+  <title>使用 redis_builder 管理 redis 集群 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="使用 redis_builder 管理 redis 集群"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2016-04-23 19:59" pubdate>
+          2016年4月23日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          26 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">使用 redis_builder 管理 redis 集群</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在 &lt;一个 C++ redis 集群管理工具&gt; 中主要讲述了如何使用 redis_builder 工具创建 redis 集群的过程，除此之外，该工具还具有更为强大的 redis 客户端管理功能（相对于官方提供的 redis-cli功能要强大的多）。本文主要讲解使用 redis_builder 以交互方式管理 redis 集群的过程。</p>
+<h2 id="一、启动-redis-builder-的交互过程"><a href="#一、启动-redis-builder-的交互过程" class="headerlink" title="一、启动 redis_builder 的交互过程"></a>一、启动 redis_builder 的交互过程</h2><p>只要运行：.&#x2F;redis_builder -s redis_ip:redis_port，便进入 redis_builder 工具的命令行交互过程，其中 redis_ip 和 redis_port 为 redis 集群中的任一个节点的 IP 及端口号。启动成功后，显示界面如下：</p>
+<p><img src="/img/redis_builder.png" srcset="/img/loading.gif" lazyload alt="redis_builder界面"></p>
+<p>在上图中，首先显示了针对一些 redis 客户端命令的：是否采用广播方式，命令执行权限。</p>
+<p>“广播方式”的含义是：该命令需要向 redis 集群中的所有节点发送某个 redis 客户端命令，有的命令向所有主从节点广播，有的命令仅向所有主节点广播。对于象 config xxx xxx （如：config get save）类的命令，是需要向所有主从节点广播以获得所有节点的配置信息；对于象 dbsize 命令，则需要向所有主节点广播，以便获得整个集群总的键值数。</p>
+<p>“执行权限”的用处是：1、防止误操作，2、禁止使用 redis_builder 执行某些非常危险的命令。其中“执行权限”的三个级别分别为：yes — 允许执行，warn — 警告执行，no — 禁止执行。对于大部分命令，如：get, incr, dbsize 等命令的执行对于整个系统一般是无害的，所以不会有限制，而对于象 del 类的命令则带有一定危险性，管理员可以配置该命令（下面单独介绍如何配置命令的执行权限）的执行为“警告”方式，这样当运行此类命令时，redis_builder 会首先提示警告信息让管理员再次确认是否真的要执行，这样做的好处是可以在一定程度上防止管理员误操作。</p>
+<h2 id="二、配置-redis-客户端命令的执行权限"><a href="#二、配置-redis-客户端命令的执行权限" class="headerlink" title="二、配置 redis 客户端命令的执行权限"></a>二、配置 redis 客户端命令的执行权限</h2><p>当以命令行交互方式启动 redis_builder 时，该工具首先会强制检查该工具所在目录下是否有 redis_commands.txt 文件（该文件里配置着一些 redis 客户端命令的执行权限及广播方式），如果存在，则加载命令配置信息，如果该文件不存在则尝试加载由 -F 指定的命令配置信息。之所以要强制加载 redis_commands.txt 命令配置文件，主要适应这样一种应用场景：由 root 超级管理员创建了 redis_commands.txt 文件（属主当然为 root），普通用户只有读的权限，这样 root 管理员在 redis_commands.txt 中设置的 redis 命令执行权限普通用户是不能修改的。</p>
+<p>如果在 redis_builder 命令的相同目录下存在 redis_commands.txt 文件且内容如下：<br><img src="/img/redis_commands.png" srcset="/img/loading.gif" lazyload alt="redis命令权限"> </p>
+<p>则启动 redis_builder 交互方式后，则显示一些 redis 命令的执行权限如下（红圈内的命令为 redis_commands.txt 文件指定的）：</p>
+<p>i<img src="/img/redis_commands2.png" srcset="/img/loading.gif" lazyload alt="redis命令权限"></p>
+<p>如果在 redis_commands.txt 指定的 redis 命令与 redis_builder 内部缺省的命令相同，则执行 redis_commands.txt 中指定的 redis 命令权限。</p>
+<h2 id="三、redis-builder-在交互方式下的命令操作"><a href="#三、redis-builder-在交互方式下的命令操作" class="headerlink" title="三、redis_builder 在交互方式下的命令操作"></a>三、redis_builder 在交互方式下的命令操作</h2><p>在交互模式下，redis_builder 可以执行所有的 redis 客户端命令，其中，redis_builder 内置了一些针对某些重要命令的特殊执行过程，除了这些内置的 redis 客户端命令，其它的命令执行方式均为标准的 redis 协议命令格式（具体格式可参考：redis.io 或 redisdoc.com）。下面首先介绍 redis_builder 内置的一些 redis 命令，随便输入一些字符串回车后，显示内置的命令如下：</p>
+<p><img src="/img/redis_help.png" srcset="/img/loading.gif" lazyload alt="redis命令帮助"></p>
+<ul>
+<li>keys 命令：该命令根据字符串匹配模式 pattern 扫描 redis 集群中所有子节点（之所以扫描子节点，是为了减轻对主节点的访问压力，如果需要强制扫描主节点，则在启动 redis_builder 时增加参数 -M），获得符合匹配条件的所有键值，为了防止键太多造成刷屏问题，可以通过 limit 参数指定每个节点显示的条目数</li>
+<li>get 命令：该命令可以获得五种数据类型（STRING, HASH, LIST, SET, ZSET）的值，内部会根据数据类型自动匹配查询，并根据类型的不同按不同的方式显示。示例如下：</li>
+</ul>
+<p><img src="/img/redis_get.png" srcset="/img/loading.gif" lazyload alt="redis获取命令"></p>
+<p>由上图可以看到，对于 STRING 和 HASH 类型，get 命令会自行进行分别处理。此外，为了防止结果集太大造成刷屏，还可以通过指定参数 :limit 来限定显示的条目，如对于 HASH 类型的 hash_test_key_53479，可以这样查找：get :2 hash_test_key_53479，虽然有三个值，则最多只会显示两个，如下：<br><img src="/img/redis_hash_get.png" srcset="/img/loading.gif" lazyload alt="redisHash获取命令"></p>
+<ul>
+<li>dbsize 命令：这是一个广播式式命令，会向所有主节点（当启动时指定参数 -M）或从所有主节点各挑选一个子节点发送 dbsize，获得整个 redis 集群中总的记录条数：</li>
+</ul>
+<p><img src="/img/redis_dbsize.png" srcset="/img/loading.gif" lazyload alt="redis数据量命令"></p>
+<ul>
+<li>nodes 命令：该命令会发送给随意一个 redis 节点，获得当前 redis 集群的分布状态，显示如下：<br><img src="/img/redis_nodes.png" srcset="/img/loading.gif" lazyload alt="redis节点状态命令"></li>
+</ul>
+<p>该图以树型方式展示了整个 redis 集群中的主从分布情况，层次结构清晰，一目了然。</p>
+<ul>
+<li>server 命令：该命令用于切换 redis 集群，管理员可以使用该命令随时切换至其它的 redis 的集群，从而方便管理员使用 redis_builder 命令同时管理多个 redis 集群。命令格式：server ip port</li>
+<li>非 redis_builder 内置的其它 redis 命令：随了上面列出的一些内置命令外，管理员可以通过在命令行中输入任意合法的 redis 客户端命令，redis_builder 会将该命令发送至单个 redis 节点或广播（通过在 redis_commands.txt 指定广播方式）至所有的节点。比如：</li>
+</ul>
+<p><img src="/img/redis_set.png" srcset="/img/loading.gif" lazyload alt="redis设置命令"></p>
+<p>图中的 set 及 hmset 命令均不是 redis_builder 内置的命令，但 redis_builder 依然可以按标准 redis 协议命令将请求发送至 redis 节点。</p>
+<h2 id="四、使用-redis-builder-实时显示当前-redis-集群的运行状态："><a href="#四、使用-redis-builder-实时显示当前-redis-集群的运行状态：" class="headerlink" title="四、使用 redis_builder 实时显示当前 redis 集群的运行状态："></a>四、使用 redis_builder 实时显示当前 redis 集群的运行状态：</h2><p>此外，redis_builder 还提供了以命令行方式实时显示当前 redis 集群的运行状态，显示如下：<br><img src="/img/redis_status.png" srcset="/img/loading.gif" lazyload alt="redis状态"></p>
+<h2 id="五、编译-redis-builder"><a href="#五、编译-redis-builder" class="headerlink" title="五、编译 redis_builder"></a>五、编译 redis_builder</h2><p>因为该工具依赖于 lib_acl&#x2F;lib_protocol&#x2F;lib_acl_cpp 三个 acl 基础库，所以需要首先编译这三个库：</p>
+<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs gams"><span class="hljs-meta"><span class="hljs-keyword">$cd</span> lib_acl; make</span><br><span class="hljs-meta"><span class="hljs-keyword">$cd</span> lib_protocol; make</span><br><span class="hljs-meta"><span class="hljs-keyword">$cd</span> lib_acl_cpp; make</span><br></code></pre></td></tr></table></figure>
+
+<p>然后再进入 app&#x2F;redis_tools&#x2F;redis_builder 编译：$cd app&#x2F;redis_tools&#x2F;redis_builder; make</p>
+<p>六、参考</p>
+<p>redis_builder 工具下载：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl/tree/master/app/redis_tools/redis_builder">https://github.com/acl-dev/acl/tree/master/app/redis_tools/redis_builder</a><br>acl 中的 redis 模块例子：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl/tree/master/lib_acl_cpp/samples/redis">https://github.com/acl-dev/acl/tree/master/lib_acl_cpp/samples/redis</a></p>
+<p>acl on github：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>acl on gitee：<a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl">https://gitee.com/acl-dev/acl</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/redis%E4%BD%BF%E7%94%A8/" class="category-chain-item">redis使用</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>使用 redis_builder 管理 redis 集群</div>
+      <div>https://acl-dev.cn/2016/04/23/redis_builder2/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2016年4月23日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2016/07/06/fiber_web/" title="使用协程方式编写高并发的WEB服务">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用协程方式编写高并发的WEB服务</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2015/11/15/memory_pool/" title="使用 acl 内存池模块管理动态对象">
+                        <span class="hidden-mobile">使用 acl 内存池模块管理动态对象</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

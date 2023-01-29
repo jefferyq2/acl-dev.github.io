@@ -1,0 +1,760 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="之前写过几篇如何使用 acl 库来实现 HTTP 客户端的例子都是基于 C 语言(使用 acl 较为底层的 HTTP 协议库写 HTTP 下载客户端举例, 使用 acl 库开发一个 HTTP 下载客户端)，其实在 acl 的 C++ 库(lib_acl_cpp) 中 HTTP 类功能更为强大，本节将介绍如何使用 acl::http_request 类来写一些简单的 HTTP 客户端示例。 一、 a">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子">
+<meta property="og:url" content="https://acl-dev.cn/2014/06/02/http_request/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="之前写过几篇如何使用 acl 库来实现 HTTP 客户端的例子都是基于 C 语言(使用 acl 较为底层的 HTTP 协议库写 HTTP 下载客户端举例, 使用 acl 库开发一个 HTTP 下载客户端)，其实在 acl 的 C++ 库(lib_acl_cpp) 中 HTTP 类功能更为强大，本节将介绍如何使用 acl::http_request 类来写一些简单的 HTTP 客户端示例。 一、 a">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-06-02T12:06:24.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.180Z">
+<meta property="article:author" content="zsxxsz">
+<meta property="article:tag" content="http">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2014-06-02 20:06" pubdate>
+          2014年6月2日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          15k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          123 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>之前写过几篇如何使用 acl 库来实现 HTTP 客户端的例子都是基于 C 语言(使用 acl 较为底层的 HTTP 协议库写 HTTP 下载客户端举例, 使用 acl 库开发一个 HTTP 下载客户端)，其实在 acl 的 C++ 库(lib_acl_cpp) 中 HTTP 类功能更为强大，本节将介绍如何使用 acl::http_request 类来写一些简单的 HTTP 客户端示例。</p>
+<h2 id="一、-acl-http-request-类的一些常用接口"><a href="#一、-acl-http-request-类的一些常用接口" class="headerlink" title="一、 acl::http_request 类的一些常用接口"></a>一、 acl::http_request 类的一些常用接口</h2><p>该 HTTP 请求类有两个构造函数，如下 ：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 构造函数：通过该构造函数传入的 socket_stream 流对象并</span><br><span class="hljs-comment"> * 不会被关闭，需要调用者自己关闭</span><br><span class="hljs-comment"> * @param client &#123;socket_stream*&#125; 数据连接流，非空，</span><br><span class="hljs-comment"> *  在本类对象被销毁时该流对象并不会被销毁，所以用户需自行释放</span><br><span class="hljs-comment"> * @param conn_timeout &#123;int&#125; 如果传入的流关闭，则内部会</span><br><span class="hljs-comment"> *  自动重试，此时需要该值表示连接服务器的超时时间(秒)，</span><br><span class="hljs-comment"> *  至于重连流的 IO 读写超时时间是从 输入的流中继承的</span><br><span class="hljs-comment"> * @param unzip &#123;bool&#125; 是否对服务器响应的数据自动进行解压</span><br><span class="hljs-comment"> * 注：当该类实例被多次使用时，用户应该在每次调用前调用</span><br><span class="hljs-comment"> * request_header::http_header::reset()</span><br><span class="hljs-comment"> */</span><br><span class="hljs-built_in">http_request</span>(socket_stream* client, <span class="hljs-type">int</span> conn_timeout = <span class="hljs-number">60</span>,<br>	<span class="hljs-type">bool</span> unzip = <span class="hljs-literal">true</span>);<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 构造函数：该构造函数内部创建的 socket_stream 流会自行关闭</span><br><span class="hljs-comment"> * @param addr &#123;const char*&#125; WEB 服务器地址</span><br><span class="hljs-comment"> * @param conn_timeout &#123;int&#125; 远程连接服务器超时时间(秒)</span><br><span class="hljs-comment"> * @param rw_timeout &#123;int&#125; IO 读写超时时间(秒)</span><br><span class="hljs-comment"> * @param unzip &#123;bool&#125; 是否对服务器响应的数据自动进行解压</span><br><span class="hljs-comment"> */</span><br><span class="hljs-built_in">http_request</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr, <span class="hljs-type">int</span> conn_timeout = <span class="hljs-number">60</span>,<br>	<span class="hljs-type">int</span> rw_timeout = <span class="hljs-number">60</span>, <span class="hljs-type">bool</span> unzip = <span class="hljs-literal">true</span>);<br></code></pre></td></tr></table></figure>
+<p>第一个是以已经连接成功的套接字流为参数的构造函数，该构造函数把连接 HTTP 服务器的工作交给用户来完成；第二个是以 HTTP 服务器地址为参数的构造函数，使用该构造函数，则该类对象内部会自动连接 HTTP 服务器。</p>
+<p>下面的几个函数接口与 HTTP 发送相关：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 获得 HTTP 请求头对象，然后在返回的 HTTP 请求头对象中添加</span><br><span class="hljs-comment"> * 自己的请求头字段或 http_header::reset()重置请求头状态，</span><br><span class="hljs-comment"> * 参考：http_header 类</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">request_header</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 向 HTTP 服务器发送 HTTP 请求头及 HTTP 请求体，同时从</span><br><span class="hljs-comment"> * HTTP 服务器读取 HTTP 响应头，对于长连接，当连接中断时</span><br><span class="hljs-comment"> * 会再重试一次，在调用下面的几个 get_body 函数前必须先</span><br><span class="hljs-comment"> * 调用本函数(或调用 write_head/write_body)；</span><br><span class="hljs-comment"> * 正常情况下，该函数在发送完请求数据后会读 HTTP 响应头，</span><br><span class="hljs-comment"> * 所以用户在本函数返回 true 后可以调用：get_body() 或</span><br><span class="hljs-comment"> * http_request::get_clinet()-&gt;read_body(char*, size_t)</span><br><span class="hljs-comment"> * 继续读 HTTP 响应的数据体</span><br><span class="hljs-comment"> * @param data &#123;const void*&#125; 发送的数据体地址，非空时自动按</span><br><span class="hljs-comment"> *  POST 方法发送，否则按 GET 方法发送</span><br><span class="hljs-comment"> * @param len &#123;size_&#125; data 非空时指定 data 数据长度</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 发送请求数据及读 HTTP 响应头数据是否成功</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">request</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">void</span>* data, <span class="hljs-type">size_t</span> len)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当采用流式写数据时，需要首先调用本函数发送 HTTP 请求头</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 是否成功，如果成功才可以继续调用 write_body</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">write_head</span><span class="hljs-params">()</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当采用流式写数据时，在调用 write_head 后，可以循环调用本函数</span><br><span class="hljs-comment"> * 发送 HTTP 请求体数据；当输入的两个参数为空值时则表示数据写完；</span><br><span class="hljs-comment"> * 当发送完数据后，该函数内部会自动读取 HTTP 响应头数据，用户可</span><br><span class="hljs-comment"> * 继续调用 get_body/read_body 获取 HTTP 响应体数据</span><br><span class="hljs-comment"> * @param data &#123;const void*&#125; 数据地址指针，当该值为空指针时表示</span><br><span class="hljs-comment"> *  数据发送完毕</span><br><span class="hljs-comment"> * @param len &#123;size_t&#125; data 非空指针时表示数据长度</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 发送数据体是否成功</span><br><span class="hljs-comment"> *  注：当应用发送完数据后，必须再调用一次本函数，同时将两个参数都赋空</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">write_body</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">void</span>* data, <span class="hljs-type">size_t</span> len)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>构建及发送 HTTP 请求的过程如下：</p>
+<ul>
+<li>1、使用两个构造函数之一创建 acl::http_request 请求对象</li>
+<li>2、调用 http_request::request_header 获得 HTTP 请求头对象的引用（http_header&amp;），然后对该 HTTP 请求头设置 HTTP 请求的参数</li>
+<li>3、http_request 类提供了两种 HTTP 请求调用 方式：<ul>
+<li>3.1、当 HTTP 请求方法为 HTTP GET 方法或为 HTTP POST 但数据体可以一次性写入时，可以使用 http_request::request 方法，在调用 http_request::request 时会将 HTTP 请求头及请求体一次性发给 HTTP 服务器；</li>
+<li>3.2   如果为 HTTP POST 请求方法，且 HTTP 数据体内容是流式的（即每次只是要发送部分数据），则应该使用 http_request::write_head 和 http_request::write_body 两个函数，即使用流式方式发送数据时，应首先调用 http_request::write_head 发送 HTTP 请求头，当该函数返回成功后，可以循环调用 http_request::write_body 来发送 HTTP 请求数据体，为了表示 HTTP 请求体数据完毕，必须最后调用一次 http_request::write_body 且两个参数为 0 时以表示数据体发送完毕。</li>
+</ul>
+</li>
+</ul>
+<p>在调用以上 3.1 或 3.2 过程成功发送完 HTTP 请求数据后，这两个过程内部会自动读取 HTTP 服务器发来的 HTTP 响应头。</p>
+<p>在上面的步骤 2 获得 HTTP 请求头对象（http_header）后，应该先调用下面的方法设置 HTTP 请求头中的参数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置请求的 URL，url 格式示例如下：</span><br><span class="hljs-comment"> * 1、http://www.test.com/</span><br><span class="hljs-comment"> * 2、/cgi-bin/test.cgi</span><br><span class="hljs-comment"> * 3、http://www.test.com/cgi-bin/test.cgi</span><br><span class="hljs-comment"> * 3、http://www.test.com/cgi-bin/test.cgi?name=value</span><br><span class="hljs-comment"> * 4、/cgi-bin/test.cgi?name=value</span><br><span class="hljs-comment"> * 5、http://www.test.com</span><br><span class="hljs-comment"> * 如果该 url 中有主机字段，则内部自动添加主机；</span><br><span class="hljs-comment"> * 如果该 url 中有参数字段，则内部自动进行处理并调用 add_param 方法；</span><br><span class="hljs-comment"> * 调用该函数后用户仍可以调用 add_param 等函数添加其它参数；</span><br><span class="hljs-comment"> * 当参数字段只有参数名没有参数值时，该参数将会被忽略，所以如果想</span><br><span class="hljs-comment"> * 单独添加参数名，应该调用 add_param 方法来添加</span><br><span class="hljs-comment"> * @param url &#123;const char*&#125; 请求的 url，非空指针</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">set_url</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* url)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 请求头的 HOST 字段</span><br><span class="hljs-comment"> * @param value &#123;const char*&#125; 请求头的 HOST 字段值</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">set_host</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* value)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 向请求的 URL 中添加参数对，当只有参数名没有参数值时则：</span><br><span class="hljs-comment"> * 1、参数名非空串，但参数值为空指针，则 URL 参数中只有：&#123;name&#125;</span><br><span class="hljs-comment"> * 2、参数名非空串，但参数值为空串，则 URL参数中为：&#123;name&#125;=</span><br><span class="hljs-comment"> * @param name &#123;const char*&#125; 参数名，不能为空指针</span><br><span class="hljs-comment"> * @param value &#123;const char*&#125; 参数值，当为空指针时，仅添加参数名，</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_param</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_int</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">short</span> value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_int</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">int</span> value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_int</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">long</span> value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_int</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">unsigned</span> <span class="hljs-type">short</span> value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_int</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_int</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> value)</span></span>;<br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_format</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* fmt, ...)</span></span><br><span class="hljs-function">	<span class="hljs-title">ACL_CPP_PRINTF</span><span class="hljs-params">(<span class="hljs-number">3</span>, <span class="hljs-number">4</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 向 HTTP 头中添加 cookie</span><br><span class="hljs-comment"> * @param name &#123;const char*&#125; cookie 名</span><br><span class="hljs-comment"> * @param value &#123;const char*&#125; cookie 值</span><br><span class="hljs-comment"> * @param domain &#123;const char*&#125; 所属域</span><br><span class="hljs-comment"> * @param path &#123;const char*&#125; 存储路径</span><br><span class="hljs-comment"> * @param expires &#123;time_t&#125; 过期时间，当该值为 0 时表示不过期，</span><br><span class="hljs-comment"> *  &gt; 0 时，则从现在起再增加 expires 即为过期时间，单位为秒</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">add_cookie</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* value,</span></span><br><span class="hljs-params"><span class="hljs-function">	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* domain = <span class="hljs-literal">NULL</span>, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* path = <span class="hljs-literal">NULL</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">	<span class="hljs-type">time_t</span> expires = <span class="hljs-number">0</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 头中的 Connection 字段，是否保持长连接</span><br><span class="hljs-comment"> * 不过，目前并未真正支持长连接，即使设置了该标志位，</span><br><span class="hljs-comment"> * 则得到响应数据后也会主动关闭连接</span><br><span class="hljs-comment"> * @param on &#123;bool&#125; 是否保持长连接</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">set_keep_alive</span><span class="hljs-params">(<span class="hljs-type">bool</span> on)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 头中的 Content-Length 字段</span><br><span class="hljs-comment"> * @param n &#123;long long int&#125; 设置值</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">set_content_length</span><span class="hljs-params">(<span class="hljs-type">long</span> <span class="hljs-type">long</span> <span class="hljs-type">int</span> n)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置 HTTP 头中的 Content-Type 字段</span><br><span class="hljs-comment"> * @param value &#123;const char*&#125; 设置值</span><br><span class="hljs-comment"> * @return &#123;http_header&amp;&#125; 返回本对象的引用，便于用户连续操作</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">http_header&amp; <span class="hljs-title">set_content_type</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* value)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>以上仅列出了 http_header 类设置 HTTP 请求参数的一些常用方法，其它的方法请参考 http_header.hpp 头文件中的说明。</p>
+<h2 id="二、acl-http-request-类获得-HTTP-服务器响应数据的常用方法"><a href="#二、acl-http-request-类获得-HTTP-服务器响应数据的常用方法" class="headerlink" title="二、acl::http_request 类获得 HTTP 服务器响应数据的常用方法"></a>二、acl::http_request 类获得 HTTP 服务器响应数据的常用方法</h2><p>上面介绍了使用 acl::http_request 构建 HTTP 请求头及发送请求的接口方法，下面介绍使用 acl::http_request 类中的方法来接收 HTTP 服务器响应过程，在调用 http_request 类中的 request 或 write_body 成功发送完请求数据后，该类对象在这两个方法内部会首先自动接收 HTTP 服务器的响应头数据，若接收过程失败，这两个方法也会返回 false 表示失败，若返回成功，则可以调用 http_request 类对象的 http_status 方法获得 HTTP 服务器的响应状态码（2xx, 3xx, 4xx, 5xx），还可调用 body_length 方法获得 HTTP 响应数据体的长度（当 HTTP 服务器返回的数据格式为 HTTP 块传输时，该函数会返回 -1，所以一般不用显示调用该方法）。下面介绍了主要的与 HTTP 响应相关的方法：</p>
+<p>首先是与 HTTP 响应头相关的接口函数，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs c++">	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 当发送完请求数据后，内部会自动调用读 HTTP 响应头过程，可以通过此函数获得服务端</span><br><span class="hljs-comment">	 * 响应的 HTTP 状态字(2xx, 3xx, 4xx, 5xx)；</span><br><span class="hljs-comment">	 * 其实该函数内部只是调用了 http_client::response_status 方法</span><br><span class="hljs-comment">	 * @return &#123;int&#125;</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">http_status</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得 HTTP 响应的数据体长度</span><br><span class="hljs-comment">	 * @return &#123;int64) 返回值若为 -1 则表明 HTTP 头不存在或没有长度字段</span><br><span class="hljs-comment">	 */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> WIN32</span><br>	<span class="hljs-function">__int64 <span class="hljs-title">body_length</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>	<span class="hljs-function"><span class="hljs-type">long</span> <span class="hljs-type">long</span> <span class="hljs-type">int</span> <span class="hljs-title">body_length</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * HTTP 数据流(响应流是否允许保持长连接)</span><br><span class="hljs-comment">	 * @return &#123;bool&#125;</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">keep_alive</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得 HTTP 响应头中某个字段名的字段值</span><br><span class="hljs-comment">	 * @param name &#123;const char*&#125; 字段名</span><br><span class="hljs-comment">	 * @return &#123;const char*&#125; 字段值，为空时表示不存在</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span>* <span class="hljs-title">header_value</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name)</span> <span class="hljs-type">const</span></span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 获得服务器返回的 Set-Cookie 设置的某个 cookie 对象</span><br><span class="hljs-comment">	 * @param name &#123;const char*&#125; cookie 名</span><br><span class="hljs-comment">	 * @param case_insensitive &#123;bool&#125; 是否区分大小写，true 表示</span><br><span class="hljs-comment">	 *  不区分大小写</span><br><span class="hljs-comment">	 * @return &#123;const HttpCookie*&#125; 返回 NULL 表示不存在</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-function"><span class="hljs-type">const</span> HttpCookie* <span class="hljs-title">get_cookie</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name,</span></span><br><span class="hljs-params"><span class="hljs-function">		<span class="hljs-type">bool</span> case_insensitive = <span class="hljs-literal">true</span>)</span> <span class="hljs-type">const</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>然后是与读 HTTP 响应数据体相关的接口函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 是否读完了数据体</span><br><span class="hljs-comment"> * @return &#123;bool&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">body_finish</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当调用 request 成功后调用本函数，读取服务器响应体数据</span><br><span class="hljs-comment"> * 并将结果存储于规定的 xml 对象中</span><br><span class="hljs-comment"> * @param out &#123;xml&amp;&#125; HTTP 响应体数据存储于该 xml 对象中</span><br><span class="hljs-comment"> * @param to_charset &#123;const char*&#125; 当该项非空，内部自动</span><br><span class="hljs-comment"> *  将数据转成该字符集存储于 xml 对象中</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 读数据是否成功</span><br><span class="hljs-comment"> * 注：当响应数据体特别大时不应用此函数，以免内存耗光</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">get_body</span><span class="hljs-params">(xml&amp; out, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* to_charset = <span class="hljs-literal">NULL</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当调用 request 成功后调用本函数，读取服务器响应体数据</span><br><span class="hljs-comment"> * 并将结果存储于规定的 json 对象中</span><br><span class="hljs-comment"> * @param out &#123;json&amp;&#125; HTTP 响应体数据存储于该 json 对象中</span><br><span class="hljs-comment"> * @param to_charset &#123;const char*&#125; 当该项非空，内部自动</span><br><span class="hljs-comment"> *  将数据转成该字符集存储于 json 对象中</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 读数据是否成功</span><br><span class="hljs-comment"> * 注：当响应数据体特别大时不应用此函数，以免内存耗光</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">get_body</span><span class="hljs-params">(json&amp; out, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* to_charset = <span class="hljs-literal">NULL</span>)</span></span>;<br><br><span class="hljs-comment">/*</span><br><span class="hljs-comment"> * 当调用 request 成功后调用本函数，读取服务器全部响应数据</span><br><span class="hljs-comment"> * 存储于输入的缓冲区中</span><br><span class="hljs-comment"> * @param out &#123;string&amp;&#125; 存储响应数据体</span><br><span class="hljs-comment"> * @param to_charset &#123;const char*&#125; 当该项非空，内部自动</span><br><span class="hljs-comment"> *  将数据转成该字符集存储于 out 对象中</span><br><span class="hljs-comment"> * 注：当响应数据体特别大时不应用此函数，以免内存耗光</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">get_body</span><span class="hljs-params">(string&amp; out, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* to_charset = <span class="hljs-literal">NULL</span>)</span></span>;<br><br><span class="hljs-comment">/*</span><br><span class="hljs-comment"> * 当调用 request 成功后调用本函数，读取服务器响应数据并</span><br><span class="hljs-comment"> * 存储于输入的缓冲区中，可以循环调用本函数，直至数据读完了，</span><br><span class="hljs-comment"> * @param buf &#123;char*&#125; 存储部分响应数据体</span><br><span class="hljs-comment"> * @param size &#123;size_t&#125; buf 缓冲区大小</span><br><span class="hljs-comment"> * @return &#123;int&#125; 返回值 == 0 表示正常读完毕，&lt; 0 表示服务器</span><br><span class="hljs-comment"> *  关闭连接，&gt; 0 表示已经读到的数据，用户应该一直读数据直到</span><br><span class="hljs-comment"> *  返回值 &lt;= 0 为止</span><br><span class="hljs-comment"> *  注：该函数读到的是原始 HTTP 数据体数据，不做解压和字符集</span><br><span class="hljs-comment"> *  解码，用户自己根据需要进行处理</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">read_body</span><span class="hljs-params">(<span class="hljs-type">char</span>* buf, <span class="hljs-type">size_t</span> size)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当调用 request 成功后调用本函数读 HTTP 响应数据体，可以循环调用</span><br><span class="hljs-comment"> * 本函数，本函数内部自动对压缩数据进行解压，如果在调用本函数之前调用</span><br><span class="hljs-comment"> * set_charset 设置了本地字符集，则还同时对数据进行字符集转码操作</span><br><span class="hljs-comment"> * @param out &#123;string&amp;&#125; 存储结果数据</span><br><span class="hljs-comment"> * @param clean &#123;bool&#125; 每次调用本函数时，是否要求先自动将缓冲区 out</span><br><span class="hljs-comment"> *  的数据清空</span><br><span class="hljs-comment"> * @param real_size &#123;int*&#125; 当该指针非空时，存储解压前读到的真正数据</span><br><span class="hljs-comment"> *  长度，如果在构造函数中指定了非自动解压模式且读到的数据 &gt; 0，则该</span><br><span class="hljs-comment"> *  值存储的长度值应该与本函数返回值相同；当读出错或未读到任何数据时，</span><br><span class="hljs-comment"> *  该值存储的长度值为 0</span><br><span class="hljs-comment"> * @return &#123;int&#125; == 0 表示读完毕，可能连接并未关闭；&gt;0 表示本次读操作</span><br><span class="hljs-comment"> *  读到的数据长度(当为解压后的数据时，则表示为解压之后的数据长度，</span><br><span class="hljs-comment"> *  与真实读到的数据不同，真实读到的数据长度应该通过参数 real_size 来</span><br><span class="hljs-comment"> *  获得); &lt; 0 表示数据流关闭，此时若 real_size 非空，则 real_size 存</span><br><span class="hljs-comment"> *  储的值应该为 0</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">read_body</span><span class="hljs-params">(string&amp; out, <span class="hljs-type">bool</span> clean = <span class="hljs-literal">false</span>, <span class="hljs-type">int</span>* real_size = <span class="hljs-literal">NULL</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当调用 request 成功后调用本函数来从 HTTP 服务端读一行数据，可以循环调用</span><br><span class="hljs-comment"> * 本函数，直到返回 false 或 body_finish() 返回 true 为止；</span><br><span class="hljs-comment"> * 本函数内部自动对压缩数据进行解压，如果在调用本函数之前调用 set_charset 设置了</span><br><span class="hljs-comment"> * 本地字符集，则还同时对数据进行字符集转码操作</span><br><span class="hljs-comment"> * @param out &#123;string&amp;&#125; 存储结果数据</span><br><span class="hljs-comment"> * @param nonl &#123;bool&#125; 读到的一行数据是否自动去掉尾部的 &quot;\r\n&quot; 或 &quot;\n&quot;</span><br><span class="hljs-comment"> * @param size &#123;size_t*&#125; 该指针非空时存放读到的数据长度</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 是否读到了一行数据：当返回 true 时表示读到了一行数据，可以</span><br><span class="hljs-comment"> *  通过 body_finish() 是否为 true 来判断是否读数据体已经结束，当读到一个空行</span><br><span class="hljs-comment"> *  且 nonl = true 时，则 *size = 0；当返回 false 时表示未读完整行且读完毕，</span><br><span class="hljs-comment"> *  *size 中存放着读到的数据长度</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">body_gets</span><span class="hljs-params">(string&amp; out, <span class="hljs-type">bool</span> nonl = <span class="hljs-literal">true</span>, <span class="hljs-type">size_t</span>* size = <span class="hljs-literal">NULL</span>)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>虽然上面提供了多个读 HTTP 响应体数据的方法，但可以分为两大类：1、一次性读所有的数据体；2、以流式方式循环读数据体。 其中，对于“一次性读取所有数据体”的读方法，适合于响应数据体比较小的情形，当响应数据为 xml 或 json 格式时，还提供了直接将响应数据体转为 xml 或 json 对象的读方法；如果响应数据体非常大（如几兆甚至几十兆以上）则应该采用流式方法循环读数据体。</p>
+<p>有一点需要注意，除了 “ int read_body(char* buf, size_t size);” 可以直接读原生的响应数据体外，其它的读方法会将读到数据体自动进行解压、字符集转换操作后将最终结果返回调用者。</p>
+<p>此外，为了方便一些文本类应用，在 http_request 类中还提供了 body_gets 方法，用来以行为单位读取 HTTP 响应数据体（当服务器也是以行为单位发送响应数据时才可使用 body_gets 方法）。</p>
+<p>acl::http_request 类除了以上接口外，还提供了其它丰富的接口（如：支持 HTTP 断点续传的 Range 相关的方法），如果您觉得这些接口依然不能满足要求，不妨通过 “http_request::get_client” 获得 acl::http_client 类对象（该类对象是 acl 有关 http 协议处理中比较基础的 HTTP 通信类），然后再在 acl::http_client 类中查找您所希望的功能接口。</p>
+<h2 id="三、示例"><a href="#三、示例" class="headerlink" title="三、示例"></a>三、示例</h2><p>下面用一个简单的例子来说明上面一些方法的使用过程：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">// http_servlet.cpp : 定义控制台应用程序的入口点。</span><br><span class="hljs-comment">//</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;assert.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;getopt.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;acl_cpp/lib_acl.hpp&quot;</span></span><br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> acl;<br><br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">http_request_test</span><br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">http_request_test</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* server_addr, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* file,<br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* stype, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* charset)<br>	&#123;<br>		server_addr_= server_addr;<br>		file_ = file;<br>		stype_ = stype;<br>		charset_ = charset;<br>		to_charset_ = <span class="hljs-string">&quot;gb2312&quot;</span>;<br>	&#125;<br><br>	~<span class="hljs-built_in">http_request_test</span>() &#123;&#125;<br><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function">	</span>&#123;<br>		string body;<br>		<span class="hljs-keyword">if</span> (ifstream::<span class="hljs-built_in">load</span>(file_, &amp;body) == <span class="hljs-literal">false</span>)<br>		&#123;<br>			<span class="hljs-built_in">logger_error</span>(<span class="hljs-string">&quot;load %s error&quot;</span>, file_.<span class="hljs-built_in">c_str</span>());<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		&#125;<br><br>		<span class="hljs-function">http_request <span class="hljs-title">req</span><span class="hljs-params">(server_addr_)</span></span>;<br><br>		<span class="hljs-comment">// 添加 HTTP 请求头字段</span><br><br>		<span class="hljs-function">string <span class="hljs-title">ctype</span><span class="hljs-params">(<span class="hljs-string">&quot;text/&quot;</span>)</span></span>;<br>		ctype &lt;&lt; stype_ &lt;&lt; <span class="hljs-string">&quot;; charset=&quot;</span> &lt;&lt; charset_;<br><br>		http_header&amp; hdr = req.<span class="hljs-built_in">request_header</span>();  <span class="hljs-comment">// 请求头对象的引用</span><br>		hdr.<span class="hljs-built_in">set_url</span>(<span class="hljs-string">&quot;/&quot;</span>);<br>		hdr.<span class="hljs-built_in">set_content_type</span>(ctype);<br>		hdr.<span class="hljs-built_in">add_param</span>(<span class="hljs-string">&quot;name1&quot;</span>, <span class="hljs-string">&quot;value1&quot;</span>);<br>		hdr.<span class="hljs-built_in">add_param</span>(<span class="hljs-string">&quot;name2&quot;</span>, <span class="hljs-string">&quot;value2&quot;</span>);<br>		<span class="hljs-comment">// 发送 HTTP 请求数据</span><br>		<span class="hljs-keyword">if</span> (req.<span class="hljs-built_in">request</span>(body.<span class="hljs-built_in">c_str</span>(), body.<span class="hljs-built_in">length</span>()) == <span class="hljs-literal">false</span>)<br>		&#123;<br>			<span class="hljs-built_in">logger_error</span>(<span class="hljs-string">&quot;send http request to %s error&quot;</span>,<br>				server_addr_.<span class="hljs-built_in">c_str</span>());<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		&#125;<br><br>		<span class="hljs-comment">// 取出 HTTP 响应头的 Content-Type 字段</span><br><br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* p = req.<span class="hljs-built_in">header_value</span>(<span class="hljs-string">&quot;Content-Type&quot;</span>);<br>		<span class="hljs-keyword">if</span> (p == <span class="hljs-literal">NULL</span> || *p == <span class="hljs-number">0</span>)<br>		&#123;<br>			<span class="hljs-built_in">logger_error</span>(<span class="hljs-string">&quot;no Content-Type&quot;</span>);<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		&#125;<br><br>		<span class="hljs-comment">// 分析 HTTP 响应头的数据类型</span><br>		http_ctype content_type;<br>		content_type.<span class="hljs-built_in">parse</span>(p);<br><br>		<span class="hljs-comment">// 响应头数据类型的子类型</span><br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* stype = content_type.<span class="hljs-built_in">get_stype</span>();<br><br>		<span class="hljs-type">bool</span> ret;<br>		<span class="hljs-keyword">if</span> (stype == <span class="hljs-literal">NULL</span>)<br>			ret = <span class="hljs-built_in">do_plain</span>(req);<br>		<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strcasecmp</span>(stype, <span class="hljs-string">&quot;xml&quot;</span>) == <span class="hljs-number">0</span>)<br>			ret = <span class="hljs-built_in">do_xml</span>(req);<br>		<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strcasecmp</span>(stype, <span class="hljs-string">&quot;json&quot;</span>) == <span class="hljs-number">0</span>)<br>			ret = <span class="hljs-built_in">do_json</span>(req);<br>		<span class="hljs-keyword">else</span><br>			ret = <span class="hljs-built_in">do_plain</span>(req);<br>		<span class="hljs-keyword">if</span> (ret == <span class="hljs-literal">true</span>)<br>			<span class="hljs-built_in">logger</span>(<span class="hljs-string">&quot;read ok!\r\n&quot;</span>);<br>		<span class="hljs-keyword">return</span> ret;<br>	&#125;<br><br><span class="hljs-keyword">private</span>:<br>	<span class="hljs-comment">// 处理 text/plain 类型数据</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">do_plain</span><span class="hljs-params">(http_request&amp; req)</span></span><br><span class="hljs-function">	</span>&#123;<br>		string body;<br>		<span class="hljs-keyword">if</span> (req.<span class="hljs-built_in">get_body</span>(body, to_charset_) == <span class="hljs-literal">false</span>)<br>		&#123;<br>			<span class="hljs-built_in">logger_error</span>(<span class="hljs-string">&quot;get http body error&quot;</span>);<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		&#125;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;body:\r\n(%s)\r\n&quot;</span>, body.<span class="hljs-built_in">c_str</span>());<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 处理 text/xml 类型数据</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">do_xml</span><span class="hljs-params">(http_request&amp; req)</span></span><br><span class="hljs-function">	</span>&#123;<br>		xml body;<br>		<span class="hljs-keyword">if</span> (req.<span class="hljs-built_in">get_body</span>(body, to_charset_) == <span class="hljs-literal">false</span>)<br>		&#123;<br>			<span class="hljs-built_in">logger_error</span>(<span class="hljs-string">&quot;get http body error&quot;</span>);<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		&#125;<br>		xml_node* node = body.<span class="hljs-built_in">first_node</span>();<br>		<span class="hljs-keyword">while</span> (node)<br>		&#123;<br>			<span class="hljs-type">const</span> <span class="hljs-type">char</span>* tag = node-&gt;<span class="hljs-built_in">tag_name</span>();<br>			<span class="hljs-type">const</span> <span class="hljs-type">char</span>* name = node-&gt;<span class="hljs-built_in">attr_value</span>(<span class="hljs-string">&quot;name&quot;</span>);<br>			<span class="hljs-type">const</span> <span class="hljs-type">char</span>* pass = node-&gt;<span class="hljs-built_in">attr_value</span>(<span class="hljs-string">&quot;pass&quot;</span>);<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;&gt;&gt;tag: %s, name: %s, pass: %s\r\n&quot;</span>,<br>				tag ? tag : <span class="hljs-string">&quot;null&quot;</span>,<br>				name ? name : <span class="hljs-string">&quot;null&quot;</span>,<br>				pass ? pass : <span class="hljs-string">&quot;null&quot;</span>);<br>			node = body.<span class="hljs-built_in">next_node</span>();<br>		&#125;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 处理 text/json 类型数据</span><br>	<span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">do_json</span><span class="hljs-params">(http_request&amp; req)</span></span><br><span class="hljs-function">	</span>&#123;<br>		json body;<br>		<span class="hljs-keyword">if</span> (req.<span class="hljs-built_in">get_body</span>(body, to_charset_) == <span class="hljs-literal">false</span>)<br>		&#123;<br>			<span class="hljs-built_in">logger_error</span>(<span class="hljs-string">&quot;get http body error&quot;</span>);<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>		&#125;<br><br>		json_node* node = body.<span class="hljs-built_in">first_node</span>();<br>		<span class="hljs-keyword">while</span> (node)<br>		&#123;<br>			<span class="hljs-keyword">if</span> (node-&gt;<span class="hljs-built_in">tag_name</span>())<br>			&#123;<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;tag: %s&quot;</span>, node-&gt;<span class="hljs-built_in">tag_name</span>());<br>				<span class="hljs-keyword">if</span> (node-&gt;<span class="hljs-built_in">get_text</span>())<br>					<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;, value: %s\r\n&quot;</span>, node-&gt;<span class="hljs-built_in">get_text</span>());<br>				<span class="hljs-keyword">else</span><br>					<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\r\n&quot;</span>);<br>			&#125;<br>			node = body.<span class="hljs-built_in">next_node</span>();<br>		&#125;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>	&#125;<br><br><span class="hljs-keyword">private</span>:<br>	string server_addr_;	<span class="hljs-comment">// web 服务器地址</span><br>	string file_;		<span class="hljs-comment">// 本地请求的数据文件</span><br>	string stype_;		<span class="hljs-comment">// 请求数据的子数据类型</span><br>	string charset_;	<span class="hljs-comment">// 本地请求数据文件的字符集</span><br>	string to_charset_;	<span class="hljs-comment">// 将服务器响应数据转为本地字符集</span><br>&#125;;<br><br><span class="hljs-comment">//////////////////////////////////////////////////////////////////////////</span><br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">usage</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* procname)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;usage: %s -h[help]\r\n&quot;</span>, procname);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;options:\r\n&quot;</span>);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\t-f request file\r\n&quot;</span>);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\t-t request stype[xml/json/plain]\r\n&quot;</span>);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\t-c request file&#x27;s charset[gb2312/utf-8]\r\n&quot;</span>);<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">int</span>   ch;<br>	<span class="hljs-function">string <span class="hljs-title">server_addr</span><span class="hljs-params">(<span class="hljs-string">&quot;127.0.0.1:8888&quot;</span>)</span>, <span class="hljs-title">file</span><span class="hljs-params">(<span class="hljs-string">&quot;./xml.txt&quot;</span>)</span></span>;<br>	<span class="hljs-function">string <span class="hljs-title">stype</span><span class="hljs-params">(<span class="hljs-string">&quot;xml&quot;</span>)</span>, <span class="hljs-title">charset</span><span class="hljs-params">(<span class="hljs-string">&quot;gb2312&quot;</span>)</span></span>;<br><br>	<span class="hljs-keyword">while</span> ((ch = <span class="hljs-built_in">getopt</span>(argc, argv, <span class="hljs-string">&quot;hs:f:t:c:&quot;</span>)) &gt; <span class="hljs-number">0</span>)<br>	&#123;<br>		<span class="hljs-keyword">switch</span> (ch)<br>		&#123;<br>		<span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;h&#x27;</span>:<br>			<span class="hljs-built_in">usage</span>(argv[<span class="hljs-number">0</span>]);<br>			<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>		<span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;f&#x27;</span>:<br>			file = optarg;<br>			<span class="hljs-keyword">break</span>;<br>		<span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;t&#x27;</span>:<br>			stype = optarg;<br>			<span class="hljs-keyword">break</span>;<br>		<span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;c&#x27;</span>:<br>			charset = optarg;<br>			<span class="hljs-keyword">break</span>;<br>		<span class="hljs-keyword">default</span>:<br>			<span class="hljs-built_in">usage</span>(argv[<span class="hljs-number">0</span>]);<br>			<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>		&#125;<br>	&#125;<br><br>	log::<span class="hljs-built_in">stdout_open</span>(<span class="hljs-literal">true</span>);   <span class="hljs-comment">// 允许日志输出至屏幕上</span><br>	<span class="hljs-function">http_request_test <span class="hljs-title">test</span><span class="hljs-params">(server_addr, file, stype, charset)</span></span>;<br>	test.<span class="hljs-built_in">run</span>();  <span class="hljs-comment">// 开始运行</span><br><br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125; <br></code></pre></td></tr></table></figure>
+
+<p>上面的例子来自于 lib_acl_cpp&#x2F;samples&#x2F;http_request。</p>
+<p>如果查看 http_request::request 源码实现，会发现 try_open()、reuse_conn、need_retry_ 等方法或变量来表示 HTTP 客户端连接的重试过程，这是因为 http_request 类的设计是支持长连接及可重用的，对于 HTTP 客户端连接池来说这些功能非常重要，在下一节介绍使用 acl 的 http 客户端连接池功能类时将会用到 http 请求客户端连接的重连及重试机制。</p>
+<h2 id="四、参考"><a href="#四、参考" class="headerlink" title="四、参考"></a>四、参考</h2><p>http_request 类的头文件位置：lib_acl_cpp&#x2F;include&#x2F;acl_cpp&#x2F;http&#x2F;http_request.hpp<br>github：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>gitee：<a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl">https://gitee.com/acl-dev/acl</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/http%E5%BC%80%E5%8F%91/" class="category-chain-item">http开发</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/http/">#http</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子</div>
+      <div>https://acl-dev.cn/2014/06/02/http_request/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2014年6月2日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2014/09/03/db/" title="使用 acl 库编写数据库应用程序">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用 acl 库编写数据库应用程序</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2014/05/18/network_simple/" title="使用 acl 库开发简单的客户端与服务器程序">
+                        <span class="hidden-mobile">使用 acl 库开发简单的客户端与服务器程序</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

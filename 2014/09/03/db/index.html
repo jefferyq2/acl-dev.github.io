@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="acl 的 C++ 版本库（lib_acl_cpp.a）的 db 模块主要与数据库编程相关，通过这些模块库，开发者可以快速地写出支持数据库连接池的数据库应用程序，目前该 db 模块支持 mysql、sqlite 数据库。本文将以 mysql 应用为例讲述如何使用这些 API 接口编程数据库应用。 在 lib_acl_cpp&#x2F;include&#x2F;acl_cpp&#x2F;db 目录下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 acl 库编写数据库应用程序">
+<meta property="og:url" content="https://acl-dev.cn/2014/09/03/db/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="acl 的 C++ 版本库（lib_acl_cpp.a）的 db 模块主要与数据库编程相关，通过这些模块库，开发者可以快速地写出支持数据库连接池的数据库应用程序，目前该 db 模块支持 mysql、sqlite 数据库。本文将以 mysql 应用为例讲述如何使用这些 API 接口编程数据库应用。 在 lib_acl_cpp&#x2F;include&#x2F;acl_cpp&#x2F;db 目录下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://acl-dev.cn/img/db.png">
+<meta property="og:image" content="https://acl-dev.cn/img/db2.png">
+<meta property="article:published_time" content="2014-09-03T04:11:00.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.180Z">
+<meta property="article:author" content="zsxxsz">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://acl-dev.cn/img/db.png">
+  
+  
+  
+  <title>使用 acl 库编写数据库应用程序 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="使用 acl 库编写数据库应用程序"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2014-09-03 12:11" pubdate>
+          2014年9月3日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          53 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">使用 acl 库编写数据库应用程序</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>acl 的 C++ 版本库（lib_acl_cpp.a）的 db 模块主要与数据库编程相关，通过这些模块库，开发者可以快速地写出支持数据库连接池的数据库应用程序，目前该 db 模块支持 mysql、sqlite 数据库。本文将以 mysql 应用为例讲述如何使用这些 API 接口编程数据库应用。</p>
+<p>在 lib_acl_cpp&#x2F;include&#x2F;acl_cpp&#x2F;db 目录下，可以看到主要分三个部分：数据库操作句柄类（db_handle，db_mysql，db_sqlite）、数据库连接池类（db_pool，mysql_pool，sqlite_pool）及数据库服务类（db_service，db_service_mysql，db_service_sqlite，这些类主要用在阻塞非阻塞结合的应用中，如：MFC界面过程与数据库过程的结合，非阻塞 IO 过程与数据库过程结合）。</p>
+<h2 id="一、数据库操作句柄"><a href="#一、数据库操作句柄" class="headerlink" title="一、数据库操作句柄"></a>一、数据库操作句柄</h2><p>下图显示了数据库句柄的类继承关系：db_handle 为基础类，db_mysql&#x2F;db_sqlite 类均继承于 db_handle 类。</p>
+<p><img src="/img/db.png" srcset="/img/loading.gif" lazyload alt="db_handle基类"></p>
+<p>在 db_mysql.hpp&#x2F;db_sqlite.hpp 两个头文件中可以看出，这两个子类仅是实现了基础类 db_handle 的一些虚函数而已，大量关于数据的操作函数都集中于 db_handle.hpp 头文件中，下图为 db_handle 类的功能协作图（其中的 db_rows&#x2F;db_row 两个类为数据库查询结果类）：<br><img src="/img/db2.png" srcset="/img/loading.gif" lazyload alt="db继承关系"></p>
+<p>下面给出了一个简单的数据库查询示例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">////////////////////////////////////////////////////////////////////////////////</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 从数据库中查询表数据</span><br><span class="hljs-comment"> * @param db &#123;acl::db_handle&amp;&#125; acl 中的数据库连接句柄引用</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">tbl_select</span><span class="hljs-params">(acl::db_handle&amp; db)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-comment">// 创建 sql 查询语句</span><br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* sql = <span class="hljs-string">&quot;select * from group_tbl where&quot;</span><br>		<span class="hljs-string">&quot; group_name=&#x27;test_name&#x27; and uvip_tbl=&#x27;test&#x27;&quot;</span>;<br>	<span class="hljs-comment">// 查询数据库</span><br>	<span class="hljs-keyword">if</span> (db.<span class="hljs-built_in">sql_select</span>(sql) == <span class="hljs-literal">false</span>)<br>	&#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;select sql: %s error\r\n&quot;</span>, sql);<br>		<span class="hljs-keyword">return</span>;<br>	&#125;<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\r\n---------------------------------------------------\r\n&quot;</span>);<br>	<span class="hljs-comment">// 列出查询结果方法一：从数据库句柄中获得查询结果集合</span><br>	<span class="hljs-type">const</span> acl::db_rows* result = db.<span class="hljs-built_in">get_result</span>();<br>	<span class="hljs-keyword">if</span> (result)<br>	&#123;<br>		<span class="hljs-comment">// 遍历查询结果集</span><br>		<span class="hljs-type">const</span> std::vector&lt;acl::db_row*&gt;&amp; rows = result-&gt;<span class="hljs-built_in">get_rows</span>();<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; rows.<span class="hljs-built_in">size</span>(); i++)<br>		&#123;<br>			<span class="hljs-type">const</span> acl::db_row* row = rows[i];<br>			<span class="hljs-comment">// 打印一行结果中的所有结果</span><br>			<span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> j = <span class="hljs-number">0</span>; j &lt; row-&gt;<span class="hljs-built_in">length</span>(); j++)<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s, &quot;</span>, (*row)[j]);<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\r\n&quot;</span>);<br>		&#125;<br>	&#125;<br>	<span class="hljs-comment">// 列出查询结果方法二：根据数组下标遍历数据库句柄的查询结果集</span><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; db.<span class="hljs-built_in">length</span>(); i++)<br>	&#123;<br>		<span class="hljs-type">const</span> acl::db_row* row = db[i];<br><br>		<span class="hljs-comment">// 取出该行记录中某个字段的值</span><br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* ptr = (*row)[<span class="hljs-string">&quot;group_name&quot;</span>];<br>		<span class="hljs-keyword">if</span> (ptr == <span class="hljs-literal">NULL</span>)<br>		&#123;<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;error, no group name\r\n&quot;</span>);<br>			<span class="hljs-keyword">continue</span>;<br>		&#125;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;group_name=%s: &quot;</span>, ptr);<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> j = <span class="hljs-number">0</span>; j &lt; row-&gt;<span class="hljs-built_in">length</span>(); j++)<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s, &quot;</span>, (*row)[j]);<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\r\n&quot;</span>);<br>	&#125;<br>	<span class="hljs-comment">// 列出查询结果方法三：直接从数据库句柄中获得结果数组</span><br>	<span class="hljs-type">const</span> std::vector&lt;acl::db_row*&gt;* rows = db.<span class="hljs-built_in">get_rows</span>();<br>	<span class="hljs-keyword">if</span> (rows)<br>	&#123;<br>		std::vector&lt;acl::db_row*&gt;::const_iterator cit = rows-&gt;<span class="hljs-built_in">begin</span>();<br>		<span class="hljs-keyword">for</span> (; cit != rows-&gt;<span class="hljs-built_in">end</span>(); cit++)<br>		&#123;<br>			<span class="hljs-type">const</span> acl::db_row* row = *cit;<br>			<span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> j = <span class="hljs-number">0</span>; j &lt; row-&gt;<span class="hljs-built_in">length</span>(); j++)<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s, &quot;</span>, (*row)[j]);<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\r\n&quot;</span>);<br>		&#125;<br>		<br>	&#125;<br>	<span class="hljs-comment">// 必须释放查询结果</span><br>	db.<span class="hljs-built_in">free_result</span>();<br>&#125;<br><span class="hljs-comment">////////////////////////////////////////////////////////////////////////////////</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 打开 mysql 数据库连接句柄</span><br><span class="hljs-comment"> * @return &#123;acl::db_handle*&#125; 返回值为 NULL 表示连接数据库失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">static</span> acl::db_handle* <span class="hljs-title">open_mysql</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbaddr = <span class="hljs-string">&quot;127.0.0.1:3306&quot;</span>;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbname = <span class="hljs-string">&quot;acl_test_db&quot;</span>;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbuser = <span class="hljs-string">&quot;acl_user&quot;</span>, *dbpass = <span class="hljs-string">&quot;111111&quot;</span>;<br>	acl::db_handle* db = <span class="hljs-keyword">new</span> acl::<span class="hljs-built_in">db_mysql</span>(dbaddr, dbname, dbuser, dbpass);<br><br>	<span class="hljs-keyword">if</span> (db-&gt;<span class="hljs-built_in">open</span>() == <span class="hljs-literal">false</span>)<br>	&#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;open mysql db error\r\n&quot;</span>);<br>		<span class="hljs-keyword">delete</span> db;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>	<span class="hljs-keyword">return</span> db;<br>&#125;<br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 打开 sqlite 数据库句柄</span><br><span class="hljs-comment"> * @return &#123;acl::db_handle*&#125; 返回值为 NULL 表示连接数据库失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">static</span> acl::db_handle* <span class="hljs-title">open_sqlite</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbfile = <span class="hljs-string">&quot;test.db&quot;</span>;<br>	acl::db_handle* db = <span class="hljs-keyword">new</span> acl::<span class="hljs-built_in">db_sqlite</span>(dbfile);<br><br>	<span class="hljs-keyword">if</span> (db-&gt;<span class="hljs-built_in">open</span>() == flase)<br>	&#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;open mysql db error\r\n&quot;</span>);<br>		<span class="hljs-keyword">delete</span> db;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>	<span class="hljs-keyword">return</span> db;<br>&#125;<br><span class="hljs-comment">////////////////////////////////////////////////////////////////////////////////</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">db_demo</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>	acl::db_handle* db;<br><br>	<span class="hljs-comment">// 操作 mysql 数据库过程</span><br>	db = <span class="hljs-built_in">open_mysql</span>();<br>	<span class="hljs-keyword">if</span> (db)<br>	&#123;<br>		<span class="hljs-built_in">tbl_select</span>(*db);<br>		<span class="hljs-keyword">delete</span> db;<br>	&#125;<br><br>	<span class="hljs-comment">// 操作 sqlite 数据库过程</span><br>	db = <span class="hljs-built_in">open_sqlite</span>();<br>	<span class="hljs-keyword">if</span> (db)<br>	&#123;<br>		<span class="hljs-built_in">tbl_select</span>(*db);<br>		<span class="hljs-keyword">delete</span> db;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>从上面的例子可以看出，虽然操作的数据库不同，但数据库查询方式却是完全一样的，因为 acl 类内部屏蔽了数据库操作的差异性。下面还有几点需要注意：</p>
+<ul>
+<li>对于数据库查询结果集有多种操作方式，开发者可以根据需要进行选择；</li>
+<li>其中生成的 sql 查询语句比较简单，所以没有做特殊字符转义，真正生产环境中开发者应注意对 sql 中的一些变化查询字段进行转义（可以使用 acl::db_handle 类中的 escape_string 方法），以防止 sql 注入攻击；</li>
+<li>如果查询的数据库结果集非空，则在处理结果完毕毕竟调用 acl::db_handle 类中的 free_result() 方法释放中间动态分配的内存；</li>
+<li>在使用 acl 数据库类编写代码时不需要包含 mysql 和 sqlite 的头文件，但在程序连接阶段必须将 mysql&#x2F;sqlite 的静态库加上。</li>
+</ul>
+<h2 id="二、数据库连接池"><a href="#二、数据库连接池" class="headerlink" title="二、数据库连接池"></a>二、数据库连接池</h2><p>为了避免建立数据库连接开销对数据造成冲击，一般的数据库连接都建议使用连接池方式（尤其是在JAVA、PHP等应用中）；连接池在保持与数据库的长连接过程中，必须要处理连接中断的重连情况，使上层使用者忽略连接中断的情况。</p>
+<p>下图为 acl 的数据库连接池中各类的继承关系及连接池基础类的函数接口：</p>
+<p>从 mysql_pool.hpp&#x2F;sqlite_pool.hpp 头文件中可以看出，二者的主要区别是构造函数略有不同：<br>db_pool 类为数据库连接池基类，其中主要有两个方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c++">	<span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 从数据库中连接池获得一个数据库连接，该函数返回的数据库</span><br><span class="hljs-comment"> * 连接对象用完后必须调用 db_pool-&gt;put(db_handle*) 将连接</span><br><span class="hljs-comment"> * 归还至数据库连接池，由该函数获得的连接句柄不能 delete，</span><br><span class="hljs-comment"> * 否则会造成连接池的内部计数器出错</span><br><span class="hljs-comment"> * @return &#123;db_handle*&#125; 返回空，则表示出错</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">db_handle* <span class="hljs-title">peek</span><span class="hljs-params">()</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 将数据库连接放回至连接池中，当从数据库连接池中获得连接</span><br><span class="hljs-comment"> * 句柄用完后应该通过该函数放回，不能直接 delete，因为那样</span><br><span class="hljs-comment"> * 会导致连接池的内部记数发生错误</span><br><span class="hljs-comment"> * @param conn &#123;db_handle*&#125; 数据库连接句柄，该连接句柄可以</span><br><span class="hljs-comment"> *  是由 peek 创建的，也可以单独动态创建的</span><br><span class="hljs-comment"> * @param keep &#123;bool&#125; 归还给连接池的数据库连接句柄是否继续</span><br><span class="hljs-comment"> *  保持连接，如果否，则内部会自动删除该连接句柄</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">put</span><span class="hljs-params">(db_handle* conn, <span class="hljs-type">bool</span> keep = <span class="hljs-literal">true</span>)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>mysql 数据库连接池的构造函数如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 采用 mysql 数据库时的构造函数</span><br><span class="hljs-comment"> * @param dbaddr &#123;const char*&#125; mysql 服务器地址，格式：IP:PORT，</span><br><span class="hljs-comment"> *  在 UNIX 平台下可以为 UNIX 域套接口</span><br><span class="hljs-comment"> * @param dbname &#123;const char*&#125; 数据库名</span><br><span class="hljs-comment"> * @param dbuser &#123;const char*&#125; 数据库用户</span><br><span class="hljs-comment"> * @param dbpass &#123;const char*&#125; 数据库用户密码</span><br><span class="hljs-comment"> * @param dblimit &#123;int&#125; 数据库连接池的最大连接数限制</span><br><span class="hljs-comment"> * @param dbflags &#123;unsigned long&#125; mysql 标记位</span><br><span class="hljs-comment"> * @param auto_commit &#123;bool&#125; 是否自动提交</span><br><span class="hljs-comment"> * @param conn_timeout &#123;int&#125; 连接数据库超时时间(秒)</span><br><span class="hljs-comment"> * @param rw_timeout &#123;int&#125; 与数据库通信时的IO时间(秒)</span><br><span class="hljs-comment"> */</span><br><span class="hljs-built_in">mysql_pool</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbaddr, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbname,<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbuser, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbpass,<br>	<span class="hljs-type">int</span> dblimit = <span class="hljs-number">64</span>, <span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> dbflags = <span class="hljs-number">0</span>,<br>	<span class="hljs-type">bool</span> auto_commit = <span class="hljs-literal">true</span>, <span class="hljs-type">int</span> conn_timeout = <span class="hljs-number">60</span>,<br>	<span class="hljs-type">int</span> rw_timeout = <span class="hljs-number">60</span>);<br></code></pre></td></tr></table></figure>
+
+<p>下面以 mysql 为例写一个简单的使用连接池的函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">dbpool_demo</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbaddr = <span class="hljs-string">&quot;127.0.0.1:3306&quot;</span>;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbname = <span class="hljs-string">&quot;acl_test_db&quot;</span>;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* dbuser = <span class="hljs-string">&quot;acl_user&quot;</span>, *dbpass = <span class="hljs-string">&quot;111111&quot;</span>;<br>	acl::db_pool* dbp = <span class="hljs-keyword">new</span> acl::<span class="hljs-built_in">mysql_pool</span>(dbaddr, dbname, dbuser, dbpass);  <span class="hljs-comment">// 创建 mysql 连接池</span><br>	acl::db_handle* dbh = dbp-&gt;<span class="hljs-built_in">peek</span>(); <span class="hljs-comment">// 从连接池中获取一个数据库连接</span><br>	<span class="hljs-keyword">if</span> (dbh == <span class="hljs-literal">NULL</span>)<br>	&#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;peek db connection error\r\n&quot;</span>);<br>		<span class="hljs-keyword">delete</span> dbp;<br>		<span class="hljs-keyword">return</span>;<br>	&#125;<br>	<span class="hljs-built_in">tbl_select</span>(*dbh);  <span class="hljs-comment">// 从数据库中查询数据（使用上面的查询例子）</span><br>	dbh-&gt;<span class="hljs-built_in">put</span>(dbh);	<span class="hljs-comment">// 归还数据库连接给连接池</span><br>	<span class="hljs-keyword">delete</span> dbh; <span class="hljs-comment">// 删除连接池对象</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>由上面示例可以看出 acl 中的数据库连接池还是比较简单易用的，不过需要注意以下几点：</p>
+<ul>
+<li>在创建数据库连接池对象时并不立刻连接后端的数据库，数据库的连接过程一般发生在 acl::db_pool::peek() 过程，但在调用 peek 时如果连接池有可用连接则直接使用之；</li>
+<li>在使用数据库连接操作数据库时，如果因为网络意外导致连接断开，内部会根据数据库连接的返回错误号决定是否需要重试该数据库操作；</li>
+<li>在用完数据库连接后需要调用 acl::db_pool::put() 过程归还数据库连；</li>
+<li>在编译 lib_acl_cpp 库时必须需要指定 Makefile.db 为工程文件(make -f Makefile.db)，这样才能使 lib_acl_cpp.a 库内部的数据库功能生效；同时在编译自己的应用程序时必须指定 libmysqlclient_r.a 的链接位置。</li>
+</ul>
+<p>好了，关于如何使用 acl 库编写数据库应用先写到此，欢迎读者批评指正。</p>
+<p>其它有关数据库使用例子请参考：</p>
+<ul>
+<li>acl\lib_acl_cpp\samples\mysql</li>
+<li>acl\lib_acl_cpp\samples\sqlite</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%96%E7%A8%8B/" class="category-chain-item">数据库编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>使用 acl 库编写数据库应用程序</div>
+      <div>https://acl-dev.cn/2014/09/03/db/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2014年9月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2014/09/20/server_loadbalance/" title="使用 acl 服务器框架编写负载均衡的应用服务">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用 acl 服务器框架编写负载均衡的应用服务</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2014/06/02/http_request/" title="使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子">
+                        <span class="hidden-mobile">使用 acl_cpp 库中的 http_request 类实现一个 HTTP 客户端请求的例子</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

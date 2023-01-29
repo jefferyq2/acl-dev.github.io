@@ -1,0 +1,735 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、概述非阻塞网络编程无疑成了高并发、高性能编程的代名词，但现实应用编程中并不是每种应用都需要采用非阻塞编程模式，因为这将大大增加编程的复杂性、开发周期以及出错率，所以我们写的绝大部分网络程序程序都是阻塞的，一般是一个进程一个网络连接或一个线程一个网络连接。即然非阻塞模式可以实现高并发网络连接，阻塞模式可以实现复杂的业务逻辑，那是否有办法将二者结合起来呢？答案是肯定的，其中在 acl_cpp 库中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程">
+<meta property="og:url" content="https://acl-dev.cn/2012/07/13/aio_rpc/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="一、概述非阻塞网络编程无疑成了高并发、高性能编程的代名词，但现实应用编程中并不是每种应用都需要采用非阻塞编程模式，因为这将大大增加编程的复杂性、开发周期以及出错率，所以我们写的绝大部分网络程序程序都是阻塞的，一般是一个进程一个网络连接或一个线程一个网络连接。即然非阻塞模式可以实现高并发网络连接，阻塞模式可以实现复杂的业务逻辑，那是否有办法将二者结合起来呢？答案是肯定的，其中在 acl_cpp 库中">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2012-07-13T15:03:00.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.180Z">
+<meta property="article:author" content="zsxxsz">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2012-07-13 23:03" pubdate>
+          2012年7月13日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          60 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>非阻塞网络编程无疑成了高并发、高性能编程的代名词，但现实应用编程中并不是每种应用都需要采用非阻塞编程模式，因为这将大大增加编程的复杂性、开发周期以及出错率，所以我们写的绝大部分网络程序程序都是阻塞的，一般是一个进程一个网络连接或一个线程一个网络连接。即然非阻塞模式可以实现高并发网络连接，阻塞模式可以实现复杂的业务逻辑，那是否有办法将二者结合起来呢？答案是肯定的，其中在 acl_cpp 库中，ipc 目录下的模块就是为了满足这种需求而设计的。</p>
+<h2 id="二、接口设计"><a href="#二、接口设计" class="headerlink" title="二、接口设计"></a>二、接口设计</h2><p>在 rpc.hpp 头文件中有两个类：rpc_service 和 rpc_request，其中 rpc_request 是一个纯虚类，用户需要继承此类并实现该类中规定的纯虚接口，从而实现自己的阻塞操作功能；rpc_service 是阻塞与非阻塞结合的粘合类，通过将 rpc_request 子类实例传递给 rpc_service 类实例的 rpc_fork 方法，实现将阻塞请求过程交给子线程处理的目的。</p>
+<h3 id="1、rpc-service-类"><a href="#1、rpc-service-类" class="headerlink" title="1、rpc_service 类"></a>1、rpc_service 类</h3><h4 id="1-1、构造函数："><a href="#1-1、构造函数：" class="headerlink" title="1.1、构造函数："></a>1.1、构造函数：</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 构造函数</span><br><span class="hljs-comment"> * @param nthread &#123;int&#125; 如果该值 &gt; 1 则内部自动采用线程池，否则</span><br><span class="hljs-comment"> *  则是一个请求一个线程</span><br><span class="hljs-comment"> * @param win32_gui &#123;bool&#125; 是否是窗口类的消息，如果是，则内部的</span><br><span class="hljs-comment"> *  通讯模式自动设置为基于 WIN32 的消息，否则依然采用通用的套接</span><br><span class="hljs-comment"> *  口通讯方式</span><br><span class="hljs-comment"> */</span><br><span class="hljs-built_in">rpc_service</span>(<span class="hljs-type">int</span> nthread, <span class="hljs-type">bool</span> win32_gui = <span class="hljs-literal">false</span>)<br></code></pre></td></tr></table></figure>
+
+<p>从参数 win32_gui 可以看出，acl_cpp 的阻塞&#x2F;非阻塞结合模式不仅可以用在通常的网络编程中，同时还可以用在阻塞过程与 WINDOWS 界面消息相结合的方面，这无非是经常用 MFC 进行界面编程的福音（例如，用户 VC 写了一个界面程序—当然这个界面窗口是基于 WIN32 消息的，但如果想进行一些数据库操作或文件下载操作，对用户而言阻塞式方法是非常容易实现这两类需求的，但 WIN32 的界面过程不能堵在任何一个数据库操作或文件下载过程，原来 VC 程序员通常的做法也是创建单独的线程进行阻塞操作，然后通过给主窗口传递消息将操作结果通知至主线程，幸运的是 acl_cpp 的 rpc 相关类可以使这一过程更为方便快捷；再如，你写的一个网络服务器程序的主线程是非阻塞的，但其中你不得不调用别人提供的库以实现用户身份验证的功能，同时这个用于用户认证的库又恰恰是阻塞的—一般也是如此，固然，你也许可以费很周折实现这一过程，同样，acl_cpp 的 rpc 相关类可以帮你解决这类问题）。</p>
+<h4 id="1-2、将阻塞处理过程的对象交由子线程处理："><a href="#1-2、将阻塞处理过程的对象交由子线程处理：" class="headerlink" title="1.2、将阻塞处理过程的对象交由子线程处理："></a>1.2、将阻塞处理过程的对象交由子线程处理：</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 主线程中运行：将请求任务放入子线程池的任务请求队列中，当线程池</span><br><span class="hljs-comment"> * 中的一个子线程接收到该任务后便调用 rpc_request::rpc_run 方法调</span><br><span class="hljs-comment"> * 用子类的方法，当任务处理完毕后给主线程发消息，在主线程中再调用</span><br><span class="hljs-comment"> * rpc_request::rpc_callback</span><br><span class="hljs-comment"> * @param req &#123;rpc_request*&#125; rpc_request 子类实例，非空</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">rpc_fork</span><span class="hljs-params">(rpc_request* req)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>通过此接口，可以将阻塞请求过程交给子线程处理，子线程处理完后再通知主线程。</p>
+<h3 id="2、rpc-request-类"><a href="#2、rpc-request-类" class="headerlink" title="2、rpc_request 类"></a>2、rpc_request 类</h3><p>在类 rpc_request 中有三个虚接口，用户子类必须实现其中的两个纯虚接口：rpc_run 和 rpc_onover，同时用户可以根据需要实现另一非纯虚接口：rpc_wakeup。是当用户调完 rpc_service::rpc_fork 且子线程接收到此请求任务后 rpc_request::rpc_run 方法会被调用（一定切记：rpc_fork 是在主线程中被调用的，而 rpc_run 是在子线程中被调用的）；当 rpc_request::rpc_run 函数返回后，rpc_reuqest::rpc_onover 会在主线程中被调用以表示子线程已经处理完毕（同样需要严重注意：rpc_request::rpc_onover 方法又回到主线程中被调用），这样，通过这两个过程就实现了将阻塞过程放在子线程中处理，主线程的非阻塞过程（非阻塞网络事件或非阻塞的 WIN32 消息过程）异步地等待子线程完成任务。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在子线程中被调用，子类必须实现此接口，用于处理具体任务</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">rpc_run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> </span>= <span class="hljs-number">0</span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在主线程中被调用，子类必须实现此接口，</span><br><span class="hljs-comment"> * 当子线程处理完请求任务后该接口将被调用，所以该类对象只能</span><br><span class="hljs-comment"> * 是当本接口调用后才能被释放，禁止在调用本接口前释放本类对象</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">rpc_onover</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> </span>= <span class="hljs-number">0</span>;<br></code></pre></td></tr></table></figure>
+
+<p>另外，在 rpc_request 类中还有一个非纯虚方法：rpc_wakeup，这是做什么用的呢？可以假设这种应用场景，在子线程中调用 rpc_request::rpc_run 方法内部过程中，用户如果需要通知主线程一些中间状态（比如，文件下载的进度）该怎么办？那就在 rpc_run 方法内先调用 rpc_request::rpc_signal 通知主线程子线程处理的中间状态，则在主线程中用户实现的 rpc_request::rpc_wakeup 虚接口就会被调用。下面是 rpc_signal 和 rpc_wakeup 的接口说明：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在子线程中被调用，内部自动支持套接口或 WIN32 窗口消息</span><br><span class="hljs-comment"> * 子类实例的 rpc_run 方法中可以多次调用此方法向主线程的</span><br><span class="hljs-comment"> * 本类实例发送消息，主线程中调用本对象 rpc_wakeup 方法</span><br><span class="hljs-comment"> * @param ctx &#123;void*&#125; 传递的参数指针，一般应该是动态地址</span><br><span class="hljs-comment"> *  比较好，这样可以避免同一个参数被重复覆盖的问题</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">rpc_signal</span><span class="hljs-params">(<span class="hljs-type">void</span>* ctx)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 虚接口：当子线程调用本对象的 rpc_signal 时，在主线程中会</span><br><span class="hljs-comment"> * 调用本接口，通知在任务未完成前(即调用 rpc_onover 前)收到</span><br><span class="hljs-comment"> * 子线程运行的中间状态信息；内部自动支持套接口或 WIN32 窗口</span><br><span class="hljs-comment"> * 消息；应用场景，例如，对于 HTTP 下载应用，在子线程中可以</span><br><span class="hljs-comment"> * 一边下载，一边向主线程发送(调用 rpc_signal 方法)下载进程，</span><br><span class="hljs-comment"> * 则主线程会调用本类实例的此方法来处理此消息</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">rpc_wakeup</span><span class="hljs-params">(<span class="hljs-type">void</span>* ctx)</span> </span>&#123; (<span class="hljs-type">void</span>) ctx; &#125;<br></code></pre></td></tr></table></figure>
+
+<p>紧接着这个应用场景，假设在子线程调用 rpc_run 的内部通过 rpc_signal 通知主线程的中间状态后，希望主线程能收到此通知消息并且希望得到主线程下一步希望执行的指令才会进一步继续执行。于是便有了 rpc_request::cond_wait 和 rpc_request::cond_signal 两个方法的产生，即子线程通过 cond_wait 阻塞地等待主线程的下一步操作指令，主线程则调用 cond_signal 通知子线程下步指令，下面是这两个方法的说明：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当子线程调用 rpc_signal 给主线程后，调用本方法可以等待</span><br><span class="hljs-comment"> * 主线程发来下一步指令</span><br><span class="hljs-comment"> * @param timeout &#123;int&#125; 等待超时时间(毫秒)，当该值为 0 时</span><br><span class="hljs-comment"> *  则采用非阻塞等待模式，当该值为 &lt; 0 时，则采用完全阻塞</span><br><span class="hljs-comment"> *  等待模式(即一直等到主线程发送 cond_signal 通知)，当该</span><br><span class="hljs-comment"> *  值 &gt; 0 时，则等待的最大超时时间为 timeout 毫秒</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回 true 表示收到主线程发来的通知信号，</span><br><span class="hljs-comment"> *  否则，需要调用 cond_wait_timeout 判断是否是超时引起的</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">cond_wait</span><span class="hljs-params">(<span class="hljs-type">int</span> timeout = <span class="hljs-number">-1</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在子线程中被调用，内部自动支持套接口或 WIN32 窗口消息</span><br><span class="hljs-comment"> * 子类实例的 rpc_run 方法中可以多次调用此方法向主线程的</span><br><span class="hljs-comment"> * 本类实例发送消息，主线程中调用本对象 rpc_wakeup 方法</span><br><span class="hljs-comment"> * @param ctx &#123;void*&#125; 传递的参数指针，一般应该是动态地址</span><br><span class="hljs-comment"> *  比较好，这样可以避免同一个参数被重复覆盖的问题</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">rpc_signal</span><span class="hljs-params">(<span class="hljs-type">void</span>* ctx)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、示例"><a href="#三、示例" class="headerlink" title="三、示例"></a>三、示例</h2><p>如果您能大体明白上面有关 rpc_service 和 rpc_request 类的功能说明，相信下面的例子您也一定能看明白：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">// rpc_download.cpp : 定义控制台应用程序的入口点。</span><br><span class="hljs-comment">//</span><br><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;stdafx.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;assert.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;lib_acl.hpp&quot;</span></span><br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> acl;<br><br><span class="hljs-keyword">typedef</span> <span class="hljs-keyword">enum</span><br>&#123;<br>	CTX_T_CONTENT_LENGTH,<br>	CTX_T_PARTIAL_LENGTH,<br>	CTX_T_END<br>&#125; <span class="hljs-type">ctx_t</span>;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">DOWN_CTX</span> <br>&#123;<br>	<span class="hljs-type">ctx_t</span> type;<br>	<span class="hljs-type">int</span> length;<br>&#125;;<br><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> __download_count = <span class="hljs-number">0</span>;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">http_download</span> : <span class="hljs-keyword">public</span> rpc_request<br>&#123;<br><span class="hljs-keyword">public</span>:<br>	<span class="hljs-built_in">http_download</span>(aio_handle&amp; handle, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr, <span class="hljs-type">const</span> <span class="hljs-type">char</span>* url)<br>		: <span class="hljs-built_in">handle_</span>(handle)<br>		, <span class="hljs-built_in">addr_</span>(addr)<br>		, <span class="hljs-built_in">url_</span>(url)<br>		, <span class="hljs-built_in">error_</span>(<span class="hljs-literal">false</span>)<br>		, <span class="hljs-built_in">total_read_</span>(<span class="hljs-number">0</span>)<br>		, <span class="hljs-built_in">content_length_</span>(<span class="hljs-number">0</span>)<br>	&#123;&#125;<br>	~<span class="hljs-built_in">http_download</span>() &#123;&#125;<br><span class="hljs-keyword">protected</span>:<br><br>	<span class="hljs-comment">// 子线程处理函数</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">rpc_run</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-function">http_request <span class="hljs-title">req</span><span class="hljs-params">(addr_)</span></span>;  <span class="hljs-comment">// HTTP 请求对象</span><br><br>		<span class="hljs-comment">// 设置 HTTP 请求头信息</span><br>		req.<span class="hljs-built_in">request_header</span>().<span class="hljs-built_in">set_url</span>(url_.<span class="hljs-built_in">c_str</span>())<br>			.<span class="hljs-built_in">set_content_type</span>(<span class="hljs-string">&quot;text/html&quot;</span>)<br>			.<span class="hljs-built_in">set_host</span>(addr_.<span class="hljs-built_in">c_str</span>())<br>			.<span class="hljs-built_in">set_method</span>(HTTP_METHOD_GET);<br><br>		<span class="hljs-comment">// 测试用，显示 HTTP 请求头信息内容</span><br>		string header;<br>		req.<span class="hljs-built_in">request_header</span>().<span class="hljs-built_in">build_request</span>(header);<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;request: %s\r\n&quot;</span>, header.<span class="hljs-built_in">c_str</span>());<br><br>		<span class="hljs-comment">// 发送 HTTP 请求数据</span><br>		<span class="hljs-keyword">if</span> (req.<span class="hljs-built_in">request</span>(<span class="hljs-literal">NULL</span>, <span class="hljs-number">0</span>) == <span class="hljs-literal">false</span>)<br>		&#123;<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;send request error\r\n&quot;</span>);<br>			error_ = <span class="hljs-literal">false</span>;<br>			<span class="hljs-keyword">return</span>;<br>		&#125;<br><br>		<span class="hljs-comment">// 获得 HTTP 请求的连接对象</span><br>		http_client* conn = req.<span class="hljs-built_in">get_client</span>();<br>		<span class="hljs-built_in">assert</span>(conn);<br>		DOWN_CTX* ctx = <span class="hljs-keyword">new</span> DOWN_CTX;<br>		ctx-&gt;type = CTX_T_CONTENT_LENGTH;<br><br>		<span class="hljs-comment">// 获得 HTTP 响应数据的数据体长度</span><br>		ctx-&gt;length = (<span class="hljs-type">int</span>) conn-&gt;<span class="hljs-built_in">body_length</span>();<br>		content_length_ = ctx-&gt;length;<br><br>		<span class="hljs-comment">// 通知主线程</span><br>		<span class="hljs-built_in">rpc_signal</span>(ctx);<br><br>		<span class="hljs-type">char</span> buf[<span class="hljs-number">8192</span>];<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>)<br>		&#123;<br>			<span class="hljs-comment">// 读 HTTP 响应数据体</span><br>			<span class="hljs-type">int</span> ret = req.<span class="hljs-built_in">get_body</span>(buf, <span class="hljs-built_in">sizeof</span>(buf));<br>			<span class="hljs-keyword">if</span> (ret &lt;= <span class="hljs-number">0</span>)<br>			&#123;<br>				ctx = <span class="hljs-keyword">new</span> DOWN_CTX;<br>				ctx-&gt;type = CTX_T_END;<br>				ctx-&gt;length = ret;<br>				<span class="hljs-comment">// 通知主线程</span><br>				<span class="hljs-built_in">rpc_signal</span>(ctx);<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			ctx = <span class="hljs-keyword">new</span> DOWN_CTX;<br>			ctx-&gt;type = CTX_T_PARTIAL_LENGTH;<br>			ctx-&gt;length = ret;<br>			<span class="hljs-comment">// 通知主线程</span><br>			<span class="hljs-built_in">rpc_signal</span>(ctx);<br>		&#125;<br>	&#125;<br><br>	<span class="hljs-comment">// 主线程处理过程，收到子线程任务完成的消息</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">rpc_onover</span><span class="hljs-params">()</span></span><br><span class="hljs-function">	</span>&#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: read over now, total read: %d, content-length: %d\r\n&quot;</span>,<br>			addr_.<span class="hljs-built_in">c_str</span>(), total_read_, content_length_);<br><br>		<span class="hljs-comment">// 当 HTTP 响应都完成时，通知主线程停止事件循环过程</span><br>		__download_count--;<br>		<span class="hljs-keyword">if</span> (__download_count == <span class="hljs-number">0</span>)<br>			handle_.<span class="hljs-built_in">stop</span>();<br>	&#125;<br><br>	<span class="hljs-comment">// 主线程处理过程，收到子线程的通知消息</span><br>	<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">rpc_wakeup</span><span class="hljs-params">(<span class="hljs-type">void</span>* ctx)</span></span><br><span class="hljs-function">	</span>&#123;<br>		DOWN_CTX* down_ctx = (DOWN_CTX*) ctx;<br>		<span class="hljs-keyword">switch</span> (down_ctx-&gt;type)<br>		&#123;<br>		<span class="hljs-keyword">case</span> CTX_T_CONTENT_LENGTH:<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: content-length: %d\r\n&quot;</span>,<br>				addr_.<span class="hljs-built_in">c_str</span>(), down_ctx-&gt;length);<br>			<span class="hljs-keyword">break</span>;<br>		<span class="hljs-keyword">case</span> CTX_T_PARTIAL_LENGTH:<br>			total_read_ += down_ctx-&gt;length;<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: partial-length: %d, total read: %d\r\n&quot;</span>,<br>				addr_.<span class="hljs-built_in">c_str</span>(), down_ctx-&gt;length, total_read_);<br>			<span class="hljs-keyword">break</span>;<br>		<span class="hljs-keyword">case</span> CTX_T_END:<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: read over\r\n&quot;</span>, addr_.<span class="hljs-built_in">c_str</span>());<br>			<span class="hljs-keyword">break</span>;<br>		<span class="hljs-keyword">default</span>:<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: ERROR\r\n&quot;</span>, addr_.<span class="hljs-built_in">c_str</span>());<br>			<span class="hljs-keyword">break</span>;<br>		&#125;<br>		<span class="hljs-keyword">delete</span> down_ctx;<br>	&#125;<br><span class="hljs-keyword">private</span>:<br>	aio_handle&amp; handle_;<br>	string addr_;<br>	string url_;<br>	<span class="hljs-type">bool</span>  error_;<br>	<span class="hljs-type">int</span>   total_read_;<br>	<span class="hljs-type">int</span>   content_length_;<br>&#125;;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>	aio_handle handle;<br>	rpc_service* service = <span class="hljs-keyword">new</span> <span class="hljs-built_in">rpc_service</span>(<span class="hljs-number">10</span>);  <span class="hljs-comment">// 创建 rpc 服务对象</span><br><br>	<span class="hljs-comment">// 打开消息服务器</span><br>	<span class="hljs-keyword">if</span> (service-&gt;<span class="hljs-built_in">open</span>(&amp;handle) == <span class="hljs-literal">false</span>)<br>	&#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;open service error: %s\r\n&quot;</span>, <span class="hljs-built_in">last_serror</span>());<br>		<span class="hljs-keyword">return</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 下载页面内容</span><br><br>	<span class="hljs-function">http_download <span class="hljs-title">down1</span><span class="hljs-params">(handle, <span class="hljs-string">&quot;www.sina.com.cn:80&quot;</span>, <span class="hljs-string">&quot;http://www.sina.com.cn/&quot;</span>)</span></span>;<br>	service-&gt;<span class="hljs-built_in">rpc_fork</span>(&amp;down1);  <span class="hljs-comment">// 发起一个阻塞会话过程</span><br>	__download_count++;<br><br>	<span class="hljs-function">http_download <span class="hljs-title">down2</span><span class="hljs-params">(handle, <span class="hljs-string">&quot;www.hexun.com:80&quot;</span>, <span class="hljs-string">&quot;/&quot;</span>)</span></span>;<br>	service-&gt;<span class="hljs-built_in">rpc_fork</span>(&amp;down2);  <span class="hljs-comment">// 发起第二个阻塞会话过程</span><br>	__download_count++;<br><br>	<span class="hljs-comment">// 异步事件循环过程</span><br>	<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>)<br>	&#123;<br>		<span class="hljs-keyword">if</span> (handle.<span class="hljs-built_in">check</span>() == <span class="hljs-literal">false</span>)<br>			<span class="hljs-keyword">break</span>;<br>	&#125;<br><br>	<span class="hljs-keyword">delete</span> service;<br>	handle.<span class="hljs-built_in">check</span>(); <span class="hljs-comment">// 保证释放所有延迟关闭的异步对象</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> WIN32</span><br>	<span class="hljs-built_in">acl_cpp_init</span>();<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br>	<span class="hljs-built_in">run</span>();<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Enter any key to continue\r\n&quot;</span>);<br>	<span class="hljs-built_in">getchar</span>();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>acl 下载:</p>
+<p>github：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>gitee：<a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl">https://gitee.com/acl-dev/acl</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E9%9D%9E%E9%98%BB%E5%A1%9E%E7%BC%96%E7%A8%8B/" class="category-chain-item">非阻塞编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程</div>
+      <div>https://acl-dev.cn/2012/07/13/aio_rpc/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2012年7月13日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2013/02/24/aio_rpc_mfc/" title="使用 acl 库 rpc 功能类实现 阻塞任务过程与MFC 界面过程分离">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用 acl 库 rpc 功能类实现 阻塞任务过程与MFC 界面过程分离</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2012/05/30/master_aio/" title="用 acl::master_aio 类编写高并发非阻塞服务器程序">
+                        <span class="hidden-mobile">用 acl::master_aio 类编写高并发非阻塞服务器程序</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

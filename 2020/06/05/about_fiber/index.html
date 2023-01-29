@@ -1,0 +1,969 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="iQiYi使用网络协程编写高并发应用实践一、概述在早期程序员为了支持多个用户并发访问服务应用，往往采用多进程方式，即针对每一个 TCP 网络连接创建一个服务进程。在 2000 年左右，比较流行使用 CGI 方式编写 Web 服务，当时人们用的比较多的 Web 服务器是基于多进程模式开发的 Apache1.3.x 系列，因为进程占用系统资源较多，所以人们开始使用多线程方式编写 Web 服务应用，因为">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iQiYi使用网络协程编写高并发应用实践">
+<meta property="og:url" content="https://acl-dev.cn/2020/06/05/about_fiber/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="iQiYi使用网络协程编写高并发应用实践一、概述在早期程序员为了支持多个用户并发访问服务应用，往往采用多进程方式，即针对每一个 TCP 网络连接创建一个服务进程。在 2000 年左右，比较流行使用 CGI 方式编写 Web 服务，当时人们用的比较多的 Web 服务器是基于多进程模式开发的 Apache1.3.x 系列，因为进程占用系统资源较多，所以人们开始使用多线程方式编写 Web 服务应用，因为">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://acl-dev.cn/img/aio_architecture.png">
+<meta property="og:image" content="https://acl-dev.cn/img/nio_read.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_running.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_switch.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_schedule.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_io_switch.png">
+<meta property="og:image" content="https://acl-dev.cn/img/benchmark.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_lock.png">
+<meta property="og:image" content="https://acl-dev.cn/img/dead_lock.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_event.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_cond.png">
+<meta property="og:image" content="https://acl-dev.cn/img/fiber_sem.png">
+<meta property="og:image" content="https://acl-dev.cn/img/qixun.png">
+<meta property="og:image" content="https://acl-dev.cn/img/hpdns.png">
+<meta property="article:published_time" content="2020-06-05T05:08:24.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.181Z">
+<meta property="article:author" content="zsxxsz">
+<meta property="article:tag" content="协程编程">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://acl-dev.cn/img/aio_architecture.png">
+  
+  
+  
+  <title>iQiYi使用网络协程编写高并发应用实践 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="iQiYi使用网络协程编写高并发应用实践"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2020-06-05 13:08" pubdate>
+          2020年6月5日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          13k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          108 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">iQiYi使用网络协程编写高并发应用实践</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="iQiYi使用网络协程编写高并发应用实践"><a href="#iQiYi使用网络协程编写高并发应用实践" class="headerlink" title="iQiYi使用网络协程编写高并发应用实践"></a>iQiYi使用网络协程编写高并发应用实践</h1><h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>在早期程序员为了支持多个用户并发访问服务应用，往往采用多进程方式，即针对每一个 TCP 网络连接创建一个服务进程。在 2000 年左右，比较流行使用 CGI 方式编写 Web 服务，当时人们用的比较多的 Web 服务器是基于多进程模式开发的 Apache1.3.x 系列，因为进程占用系统资源较多，所以人们开始使用多线程方式编写 Web 服务应用，因为线程占用的资源更少，这使单台服务器支撑的用户并发度提高了，但依然存在资源浪费的问题。因为在多进程或多线程编程方式下，均采用了阻塞通信方式，这会使得服务端的进程或线程因『等待』客户端的请求数据而变得『空闲』，而且在该空闲期间还不能做别的事情，白白浪费了操作系统的调度时间和内存资源。这种一对一的服务方式在广域网的环境下显示变得不够廉价，于是人们开始采用非阻塞网络编程方式来提升网络服务并发度，比较著名的 Web 服务器 Nginx 就是非阻塞服务的典型代表，另外还有象 Java Netty 这样的非阻塞网络开发库。<br> 非阻塞网络编程一直以高并发和高难度而著称，这种编程方式虽然有效的提升了服务器的利用率和处理性能，但却对广大程序员提出了较大挑战，因为非阻塞 IO 的编程方式往往会把业务逻辑分隔的支离破碎，需要在通信过程中记录大量的中间状态，而且还需要处理各种异常情况，最终带来的后果就是开发周期长、复杂度高，而且难于维护。<br>阻塞式网络编程实现容易但并发度不高，非阻塞网络编程并发度高但编写难，针对这两种网络编程方式优缺点，人们提出了使用协程方式编写网络程序的思想，其实协程本身并不是一个新概念，早在2000年前 Windows NT 上就出现了『纤程』的 API，号称可以创建成千上万个纤程来处理业务任务，在 BSD Unix 上可以用来实现协程切换的 API &lt;ucontext.h&gt; 在 2002 年就已经存在了，当然另外用于上下文跳转的 API &lt;setjmp.h&gt; 出现的更早（1993年）。虽然协程的概念出现的较早，但人们终不能发现其广大的应用场景，象『longjmp』这些 API 多用在一些异常跳转上，如 Postfix（著名的邮件MTA）在处理网络异常时用其实现程序跳转。直到 Russ Cox 在 Go 语言中加入了协程（Goroutine）的功能，使用协程进行高并发网络编程才变得的简单易行。<br>Russ Cox 早在 2002 年就编写了一个简单的网络协程库 libtask（<a target="_blank" rel="noopener" href="https://swtch.com/libtask/">https://swtch.com/libtask/</a> ），代码量不多，却可以使我们比较清晰地看到『通过使网络 IO 协程化，使编写高并发网络程序变得如此简单』。<br>本文以爱奇艺开源的网络协程库（<a target="_blank" rel="noopener" href="https://github.com/iqiyi/libfiber">https://github.com/iqiyi/libfiber</a> ）为例，讲解网络协程的设计原理、编程实践、性能优化等方面内容。</p>
+<h2 id="二、网络协程基本原理"><a href="#二、网络协程基本原理" class="headerlink" title="二、网络协程基本原理"></a>二、网络协程基本原理</h2><p><strong><code>网络协程</code></strong> 的 <strong><code>本质</code></strong> 是将应用层的阻塞式 IO 过程在底层转换成非阻塞 IO 过程，并通过程序运行栈的上下文切换使 <strong>IO</strong> 准备就绪的协程交替运行，从而达到以简单方式编写高并发网络程序的目的。既然网络协程的底层也是非阻塞IO过程，所以在网络在介绍网络协程基本原理前，我们先了解一下非阻塞网络通信的基本过程。</p>
+<h3 id="2-1、网络非阻塞编程"><a href="#2-1、网络非阻塞编程" class="headerlink" title="2.1、网络非阻塞编程"></a>2.1、网络非阻塞编程</h3><p>下面给出了网络非阻塞编程的常见设计方式：<br><img src="/img/aio_architecture.png" srcset="/img/loading.gif" lazyload alt="aio_architecture"></p>
+<ul>
+<li>使用操作系统提供的多路复用事件引擎 API（select&#x2F;poll&#x2F;epoll&#x2F;kqueue etc），将网络套接字的网络读写事件注册到事件引擎中；</li>
+<li>当套接字满足可读或可写条件时，事件引擎设置套接字对应的事件状态并返回给调用者；</li>
+<li>调用者根据套接字的事件状态分别『回调』对应的处理过程；</li>
+<li>对于大部分基于 TCP 的网络应用，数据的读写往往不是一次 IO 就能完成的，这样，对于一次会话过程就会有多次 IO 读写过程，在每次 IO 过程中都需要缓存读写的数据，直至本次数据会话完成。</li>
+</ul>
+<p>下图以非阻塞读为例展示了整个异步非阻塞读及回调处理过程：  </p>
+<p><img src="/img/nio_read.png" srcset="/img/loading.gif" lazyload alt="nio_read"></p>
+<p>相对于阻塞式读的处理过程（循环读数据直至读完成或关闭），非阻塞读过程的确要复杂很多：</p>
+<ul>
+<li>一次完整的 IO 会话过程会被分割成多次的 IO 过程；</li>
+<li>每次 IO 过程需要缓存部分数据及当前会话的处理状态；</li>
+<li>要求相关的解析器（如：Json&#x2F;Xml&#x2F;Mime 解析器）最好能支持流式解析方式，否则就得需要读到完整数据后才能交给解析器去处理，当遇到业数据较大时就需要分配较大的连续内存块，势必造成系统的内存分配压力；</li>
+<li>因为当前绝大部分后台系统（如数据库、存储系统、缓存系统）所提供的客户端驱动都是阻塞式的，所以无法直接应用在非阻塞通信应用中，从而限制了非阻塞通信方式的应用场景；</li>
+<li>因为多次 IO 过程将应用的业务处理逻辑分割的支离破碎，大大增加了业务编写过程的复杂度，降低了开发效率，同时加大了后期的不易维护性。</li>
+</ul>
+<h3 id="2-2、网络协程编程"><a href="#2-2、网络协程编程" class="headerlink" title="2.2、网络协程编程"></a>2.2、网络协程编程</h3><h4 id="2-2-1、几个概念"><a href="#2-2-1、几个概念" class="headerlink" title="2.2.1、几个概念"></a>2.2.1、几个概念</h4><p>在了解使用协程编写网络程序之前，需要先了解几个概念：</p>
+<ul>
+<li><strong>最小调度单元：</strong> 当前大部分操作系统的最小调度单元是线程，即在单核或多核 CPU 环境中，操作系统是以线程为基本调度单元的，操作系统负责将多个线程任务唤入唤出；</li>
+<li><strong>上下文切换：</strong> 当操作系统需要将某个线程挂起时，会将该线程在 CPU 寄存器中的栈指针、状态字等保存至该线程的内存栈中；当操作系统需要唤醒某个被挂起的线程时（重新放置在CPU中运行），会将该线程之前被挂起的栈指针重新置入 CPU 寄存器中，并恢复之前保留的，从而使该线程得以运行；通过这样的挂起与唤醒操作，便完成了不同线程间的上下文切换；</li>
+<li><strong>并行与网络并发：</strong> 并行是指同一『时刻』同时运行的任务数，并行任务数量取决于 CPU 核心数量；而网络并发是指在某一『时刻』网络连接的数量；类似于二八定律，在客户端与服务端保持 TCP 长连接时，大部分连接是空闲的，所以服务端只需响应少量活跃的网络连接即可，服务端采用多路复用技术，即使使用单核也可以支持 100K 个网络连接。</li>
+</ul>
+<h4 id="2-2-2、协程的切换过程"><a href="#2-2-2、协程的切换过程" class="headerlink" title="2.2.2、协程的切换过程"></a>2.2.2、协程的切换过程</h4><p>前面提到操作系统进行任务调度的最小单元是线程，操作系统无法感知这些协程的存在，自然也就无法对其进行调度，因此存在于线程中的大量协程需要相互协作，合理地占用 CPU 时间片，在合适的运行点（如：网络阻塞点）主动让出 CPU，给其它协程提供运行的机会。<br>每个协程都会经历如下过程：  </p>
+<p><img src="/img/fiber_running.png" srcset="/img/loading.gif" lazyload alt="fiber_running"></p>
+<p>协程之间的切换一般可分为『星形切换』和『环形切换』，参照下图：<br><img src="/img/fiber_switch.png" srcset="/img/loading.gif" lazyload alt="fiber_switch"></p>
+<p>当有大量的协程需要运行时，在『环形切换』模式下，前一个协程运行完毕后直接『唤醒』并切换至下一个协程，而无需象『星形切换』那样先切换至调度原点，再从调度原点来『唤醒』下一个协程；因为『环形切换』要比『星形切换』节省了一次上下文的切换过程，所以『环形切换』方式的切换效率更高。</p>
+<h4 id="2-2-3、网络过程协程化"><a href="#2-2-3、网络过程协程化" class="headerlink" title="2.2.3、网络过程协程化"></a>2.2.3、网络过程协程化</h4><p>下图是使网络过程协程化的示意图：</p>
+<p><img src="/img/fiber_schedule.png" srcset="/img/loading.gif" lazyload alt="fiber_schedule"></p>
+<ul>
+<li>在网络协程库中，内部有一个缺省的 <code>IO调度协程</code>，其负责处理与网络 IO 相关的协程调度过程，故称之为『<strong>IO 调度协程</strong>』；</li>
+<li>每一个网络连接绑定一个套接字句柄，该套接字绑定一个协程；</li>
+<li>当对网络套接字进行读写操作时，将该套接字添加至 IO 调度协程的事件引擎中并设置读写事件，然后将该协程挂起；这样所有处于读写等待状态的网络协程都被挂起，且与之关联的网络套接字均由 IO 调度协程的事件引擎统一监控管理；</li>
+<li>当某些网络套接字满足可读或可写条件时，IO 调度协程的事件引擎返回这些套接字的状态，IO 调度协程找到与这些套接字绑定的协程对象，然后分别唤醒这些协程，使之依次运行；</li>
+<li>IO 事件协程内部本身也是由系统事件引擎（如：Linux 下的 epoll 事件引擎）驱动的，其内部 IO 事件的驱动机制和上面介绍的非阻塞过程相似，当某个套接字句柄『准备就绪』时，IO 调度协程便将其所绑定的协程添加进协程调度队列中，待本次 IO 调度协程返回后，会依次运行协程调度队列里的所有协程。</li>
+</ul>
+<h4 id="2-2-4、网络协程示例"><a href="#2-2-4、网络协程示例" class="headerlink" title="2.2.4、网络协程示例"></a>2.2.4、网络协程示例</h4><p>下面给出一个使用协程方式编写的网络服务器程序，该程序位于：<a target="_blank" rel="noopener" href="https://github.com/iqiyi/libfiber">https://github.com/iqiyi/libfiber</a> 。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;assert.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;fiber/lib_fiber.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;patch.h&quot;</span>  <span class="hljs-comment">// 主要包含：SOCKET, socket_close(), socket_listen(), socket_accept()</span></span><br><span class="hljs-type">static</span> <span class="hljs-type">size_t</span> __stack_size  = <span class="hljs-number">128000</span>;  <span class="hljs-comment">// 协程栈大小设为 128 KB 左右</span><br><br><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">fiber_client</span><span class="hljs-params">(ACL_FIBER *fb, <span class="hljs-type">void</span> *ctx)</span> &#123;<br>    SOCKET fd = (<span class="hljs-type">int</span> *) ctx;<br>    <span class="hljs-type">char</span> buf[<span class="hljs-number">8192</span>];<br>    <span class="hljs-built_in">free</span>(ctx);<br>    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) &#123;<br>        <span class="hljs-type">int</span> ret = acl_fiber_recv(fd, buf, <span class="hljs-keyword">sizeof</span>(buf), <span class="hljs-number">0</span>);  <span class="hljs-comment">// 读客户端请求数据</span><br>        <span class="hljs-keyword">if</span> (ret == <span class="hljs-number">0</span>) &#123;  <span class="hljs-comment">// 说明网络连接关闭</span><br>            <span class="hljs-keyword">break</span>;<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (ret &lt; <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-keyword">if</span> (acl_fiber_last_error() == FIBER_EINTR) &#123;<br>                <span class="hljs-keyword">continue</span>;<br>            &#125;<br>            <span class="hljs-keyword">break</span>;<br>        &#125;<br>        <span class="hljs-keyword">if</span> (acl_fiber_send(fd, buf, ret, <span class="hljs-number">0</span>) &lt; <span class="hljs-number">0</span>) &#123;  <span class="hljs-comment">// 回写数据</span><br>            <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br>    socket_close(fd);  <span class="hljs-comment">// 关闭套接字</span><br>&#125;<br><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">fiber_accept</span><span class="hljs-params">(ACL_FIBER *fb, <span class="hljs-type">void</span> *ctx)</span> &#123;<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *addr = (<span class="hljs-type">const</span> <span class="hljs-type">char</span> *) ctx;<br>    SOCKET lfd = socket_listen(<span class="hljs-string">&quot;127.0.0.1&quot;</span>, <span class="hljs-number">9001</span>);  <span class="hljs-comment">// 创建监听套接字</span><br>    assert(lfd &gt;= <span class="hljs-number">0</span>);<br>    <span class="hljs-keyword">for</span> (;;) &#123;<br>        SOCKET *pfd, cfd = socket_accept(lfd);  <span class="hljs-comment">// 等待客户端连接</span><br>        <span class="hljs-keyword">if</span> (cfd == <span class="hljs-number">-1</span>) &#123;<br>            <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;accept error %s\r\n&quot;</span>, acl_fiber_last_serror());<br>            <span class="hljs-keyword">break</span>;<br>        &#125;<br>        pfd  = (<span class="hljs-type">int</span> *) <span class="hljs-built_in">malloc</span>(<span class="hljs-keyword">sizeof</span>(SOCKET));<br>        *pfd = cfd;<br>        acl_fiber_create(fiber_client, pfd, __stack_size);  <span class="hljs-comment">// 创建协程处理连接请求</span><br>    &#125;<br>    acl_fiber_schedule_stop();  <span class="hljs-comment">// 停止协程调度器</span><br>&#125;<br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>    <span class="hljs-comment">// 指定 IO 事件引擎类型，在 Linux 下将采用 epoll</span><br>    <span class="hljs-type">int</span> event_mode = FIBER_EVENT_KERNEL;<br><br>    <span class="hljs-comment">// 创建网络监听协程，用来接收客户端连接请求</span><br>    acl_fiber_create(fiber_accept, <span class="hljs-literal">NULL</span>, __stack_size);<br><br>    <span class="hljs-comment">// 开始运行协程调度器</span><br>    acl_fiber_schedule_with(event_mode);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>该网络协程服务器程序处理流程为：</p>
+<ul>
+<li>创建一个监听协程，其『堵』在  <code>accept()</code> 调用上，等待客户端连接；</li>
+<li>启动协程调度器，开始运行新创建的监听协程；</li>
+<li>监听协程每当接收一个客户端连接，便创建一个客户端协程单独处理该网络连接，然后监听协程继续等待下一个客户端连接；</li>
+<li>客户端协程以『阻塞』方式读写网络连接数据；</li>
+<li>客户端连接处理完毕，关闭连接，并退出协程。</li>
+</ul>
+<p>从该例子可以看出，网络协程的处理过程都是顺序方式，比较符合人的思维模式；我们很容易将该例子改成线程方式，处理逻辑和协程方式相似，但协程方式更加轻量、占用资源更少，并发处理能力更强。<br>简单的表面必定隐藏着复杂的底层设计，因为网络协程过程在底层还是需要转为『非阻塞』处理过程，只是使用者并未感知而已。</p>
+<h2 id="三、网络协程核心设计要点"><a href="#三、网络协程核心设计要点" class="headerlink" title="三、网络协程核心设计要点"></a>三、网络协程核心设计要点</h2><p>在介绍了网络协程的基本设计原理后，本章节主要介绍 <code>libfiber</code> 网络协程的核心设计要点，为网络协程应用实践化提供了基本的设计思路。</p>
+<h3 id="3-1、协程调度"><a href="#3-1、协程调度" class="headerlink" title="3.1、协程调度"></a>3.1、协程调度</h3><p>libfiber 采用了单线程调度方式，主要是为了避免设计的复杂性及效率上的影响。如果设计成多线程调度模式，则必须首先需要考虑：</p>
+<ul>
+<li>多核环境下 CPU 缓存亲和性：因为 CPU 本身有高效的多级缓存，虽然 CPU 多级缓存容量较内存小的多，但访问效率却远高于内存，单线程调度方式下，可以方便编译器有效地进行 CPU 缓存使用优化，使运行指令和共享数据尽可能放置在 CPU 缓存中，而如果采用多线程调度方式，多个线程间共享的数据就可能使 CPU 缓存失效，会造成调度线程越多，协程的运行效率越低的问题；</li>
+<li>多线程分配任务时的同步问题：当多个线程需要从公共协程任务资源中获取协程任务时，必然需要采用增加『锁』保护机制，一旦产生大量的『锁』冲突，则势必会造成运行性能的严重损耗；</li>
+<li>事件引擎操作优化：下面会介绍在单线程调度模式下的事件引擎操作优化，在多线程调度则很难进行如此优化。</li>
+</ul>
+<p>当然，单线程调度也需解决如下问题：</p>
+<ul>
+<li>如何有效地使用多核：在单线程调度方式下，该线程内的多个协程在运行时仅能使用单核，这显示是不合理的，解决方案为：<ul>
+<li>启动多个进程，每个进程运行一个线程;</li>
+<li>同一进程内启动多个线程，每个线程运行独立的协程调度过程；</li>
+</ul>
+</li>
+<li>多个线程之间的资源共享：因为协程调度是不跨线程的，在设计协程互斥锁时需要考虑：<ul>
+<li>协程锁需要支持『同一线程内的协程之间、不同线程的协程之间、协程线程与非协程线程之间』的互斥；</li>
+<li>网络连接池的线程隔离机制，即需要为每个线程建立各自独立的连接池，防止连接对象在不同线程的协程之间共享，否则便会造成同一网络连接在不同线程的协程之间使用，破坏单线程调度规则；</li>
+</ul>
+</li>
+<li>需要防止线程内的某个协程『疯狂』占用 CPU 资源，导致本线程内的其它协程得不到运行的机会，虽然此类问题在多线程调度时也会造成问题，但显然在单线程调度时造成的后果更为严重。</li>
+</ul>
+<h3 id="3-2、协程事件引擎设计"><a href="#3-2、协程事件引擎设计" class="headerlink" title="3.2、协程事件引擎设计"></a>3.2、协程事件引擎设计</h3><h4 id="3-2-1、跨平台性"><a href="#3-2-1、跨平台性" class="headerlink" title="3.2.1、跨平台性"></a>3.2.1、跨平台性</h4><p>libfiber 的事件引擎支持现在主流的操作系统，从而为 libfiber 的跨平台特性提供了有力的支撑，下面为 libfiber 事件引擎所支持的平台：</p>
+<ul>
+<li><strong>Linux：</strong> sekect&#x2F;poll&#x2F;epoll&#x2F;io_uring，epoll 为 Linux 内核级事件引擎，采用事件触发机制，不象 select&#x2F;poll 的轮循方式，所以 epoll 在处理大并发网络连接时运行效率更高；而 io_uring 引擎是在内核5.1以后出现的新的事件引擎，由 Facebook 的 Jens Axboe(IO 压测工作 fio 作者) 设计完成，该引擎为真正的异步 IO 模型（为 IO 完成模型），统一了网络 IO 与文件 IO 过程（不象 epoll 仅支持网络，因为其是事件通知方式，无法预知 IO 何时完成）；</li>
+<li><strong>BSD&#x2F;MacOS：</strong> select&#x2F;poll&#x2F;kqueue，kqueue 也为内核级事件引擎，在大并发环境下具有更高的性能；</li>
+<li><strong>Windows：</strong> select&#x2F;poll&#x2F;iocp&#x2F;Windows 窗口消息，其中 iocp 为 Windows 平台下的内核级高效事件引擎；libfiber 支持采用界面消息引擎做为底层的事件引擎，这样在编写 Windows 界面程序的网络模块时便可以使用协程方式了，之前人们在 Windows 平台编写界面程序的网络模块时，一般采用以下两种方式：<ul>
+<li>采用非阻塞方式，网络模块与界面模块在同一线程中；</li>
+<li>将网络模块放到独立的线程中运行，运行结果通过界面消息『传递』到界面线程中；</li>
+</ul>
+</li>
+</ul>
+<p>现在 libfiber 支持 Windows 界面消息引擎，我们就可以在界面线程中直接创建网络协程，直接进行阻塞式网络编程了。(Windows 界面网络协程示例：<a target="_blank" rel="noopener" href="https://github.com/iqiyi/libfiber/tree/master/samples/WinEchod">https://github.com/iqiyi/libfiber/tree/master/samples/WinEchod</a> )</p>
+<h4 id="3-2-2、运行效率"><a href="#3-2-2、运行效率" class="headerlink" title="3.2.2、运行效率"></a>3.2.2、运行效率</h4><p>大家在谈论网络协程程序的运行效率时，往往只重视协程的切换效率，但却忽视了事件引擎对于性能影响的重要性，虽然现在很网络协程库所采用的事件引擎都是内核级的，但仍需要合理使用才能发挥其最佳性能。 </p>
+<p>在使用 libfiber 的早期版本编译网络协程服务程序时，虽然在 Linux 平台上也是采用了 <code>epoll</code> 事件引擎，但在对网络协程服务程序进行性能压测（使用用系统命令 『<code># perf top -p pid</code>』 观察运行状态）时，却发现 <code>epoll_ctl</code> API 占用了较高的 CPU，分析原因是 <code>epoll_ctl</code> 使用次数过多导致的：因为 <code>epoll_ctl</code> 内部在对套接字句柄进行添加、修改或删除事件操作时，需要先通过红黑树的查找算法找到其对应的内部套接字对象（红黑树的查找效率并不是O(1)的），如果 epoll_ctl 的调用次数过多必然会造成 CPU 的占用较高。 </p>
+<p>因为 TCP 数据在传输时是流式的，这就意味着数据接收者经常需要多次读操作才能获得完整的数据，反映到网络协程处理流程上如下图所示：</p>
+<p><img src="/img/fiber_io_switch.png" srcset="/img/loading.gif" lazyload alt="fiber_io_switch"></p>
+<p>仔细观察上面处理流程，可以发现在图中的标注4（唤醒协程）和标注5（挂起协程）之间的两个事件操作：<code>标注2取消读事件</code> 与 <code>标注3注册读事件</code>，再结合 <code>标注1注册读事件</code>，完全可以把注2和标注3处的两个事件取消，因为标注1至标注3的目标是 <code>注册读事件</code>。最后，通过缓存事件操作的中间状态，合并中间态的事件操作过程，使 libfiber 的 IO 处理性能提升 20% 左右。</p>
+<p>下图给出了采用 libfiber 编写的回显服务器与采用其它网络协程库编写的回显服务器的性能对比（对比单核条件下的 IO 处理能力）：</p>
+<p><img src="/img/benchmark.png" srcset="/img/loading.gif" lazyload alt="benchmark"></p>
+<p>在 libfiber 中之所以可以针对中间的事件操作过程进行合并处理，主要是因为 libfiber 的调度过程是单线程模式的，如果想要在多线程调度器中实现事件过程的合并处理则难度就要大的多：当套接字所绑定的协程因IO可读被唤醒时，假设不取消该套接字的读事件，则该协程被某个线程『拿走』后，内核又因接收到新数据而通知协程调度器，此时协程调度器就不知该如何处理了。</p>
+<h3 id="3-3、协程同步机制"><a href="#3-3、协程同步机制" class="headerlink" title="3.3、协程同步机制"></a>3.3、协程同步机制</h3><h4 id="3-3-1、单一线程内部的协程互斥"><a href="#3-3-1、单一线程内部的协程互斥" class="headerlink" title="3.3.1、单一线程内部的协程互斥"></a>3.3.1、单一线程内部的协程互斥</h4><p>对于象 libfiber 这样的采用单线程调度方案的协程库而言，如果互斥加锁过程仅限于同一个调度线程内部，则实现一个协程互斥锁是比较容易的，下图为 libfiber 中单线程内部使用的协程互斥锁的处理流程图（参考源文件：fiber_lock.c）：</p>
+<p><img src="/img/fiber_lock.png" srcset="/img/loading.gif" lazyload alt="fiber_lock"></p>
+<p>同一线程内的协程在等待锁资源时，该协程将被挂起并被加入锁等待队列中，当加锁协程解锁后会唤醒锁等待队列中的第一个协程，单线程内部的协程互斥锁正是利用了协程的挂起和唤醒机制。  </p>
+<h4 id="3-3-2、多线程之间的协程互斥"><a href="#3-3-2、多线程之间的协程互斥" class="headerlink" title="3.3.2、多线程之间的协程互斥"></a>3.3.2、多线程之间的协程互斥</h4><p>虽然 libfiber 的协程调度器是单线程模式的，但却可以启动多个线程使每个线程运行独立的协程调度器，如果一些资源需要在多个线程中的协程间共享，则就需要有一把可以跨线程使用的协程互斥锁。在将 libfiber 应用在多线程的简单场景时，也许直接使用系统提供的线程锁就可以解决很多问题，但线程锁当遇到如下场景时就显得无能为力：</p>
+<p><img src="/img/dead_lock.png" srcset="/img/loading.gif" lazyload alt="dead_lock"></p>
+<p>上述显示了系统线程互斥锁在 libfiber 使用时遇到的死锁问题：</p>
+<ul>
+<li>线程A 中的协程A1 成功对线程锁1加锁；</li>
+<li>线程B 中的协程B2 对线程锁2成功加锁；</li>
+<li>当线程A 中的协程A2 想要对线程锁2 加锁而阻塞时，则会使线程A 的协程调度器阻塞，从而导致整个线程A 中的所有协程被系统挂起；同样，线程B 也会因协程B1 阻塞在线程锁1 上而被阻塞；最终造成了死锁问题。</li>
+</ul>
+<p>产生上述死锁的根本原因是单线程调度机制以及操作系统的最小调度单元是线程，系统对于协程是无感知的。因此，在 libfiber 中专门设计了可用于在线程的协程之间使用的事件互斥锁（源码参见 fiber_event.c, 当前最新的是 fiber_mutex.c，性能更好且占用资源更少），其设计原理如下：</p>
+<p><img src="/img/fiber_event.png" srcset="/img/loading.gif" lazyload alt="fiber_event"></p>
+<p>该可用于在线程之间的协程进行互斥的事件互斥锁的处理流程为：</p>
+<ul>
+<li>协程B（假设其属于线程b）已经对事件锁加锁后；</li>
+<li>协程A（假设其属于线程a）想对该事件锁加锁时，对原子数加锁失败后创建IO管道，将IO读管道置入该事件锁的IO读等待队列中，此时协程A被挂起；</li>
+<li>当协程B 对事件锁解锁时，会首先获得协程A 的读管道，解锁后再向管道中写入消息，从而唤醒协程A；</li>
+<li>协程A 被唤醒后读取管道中的消息，然后再次尝试对事件锁中的原子数加锁，如加速成功便可以继续运行，否则会再次进入睡眠状态（有可能此事件锁又被其它协程提前抢占）。</li>
+</ul>
+<p>在上述事件锁的加&#x2F;解锁处理流程中，使用原子数和IO管道的好处是：</p>
+<ul>
+<li>通过使用原子数可以使协程快速加锁空闲的事件锁，原子数在多线程或协程环境中的行为相同的，可以保证安全性；</li>
+<li>当锁被占用时，通过等待管道IO 方式使当前协程挂起，而又不会干扰该协程所属线程的正常运行；</li>
+<li>在 Linux 平台上可以使用 eventfd 代替管道，占用资源更少。</li>
+</ul>
+<h4 id="3-3-3、协程条件变量"><a href="#3-3-3、协程条件变量" class="headerlink" title="3.3.3、协程条件变量"></a>3.3.3、协程条件变量</h4><p>我们在使用线程编程时，都知道线程条件变量的价值：在线程之间传递消息时往往需要组合线程条件变量和线程锁。因此，在 libfiber 中同样设计了协程条件变量（源码见 fiber_cond.c），通过组合使用 libfiber 中的协程事件锁（fiber_event.c，目前使用 fiber_mutex.c）和协程条件变量，用户可以编写出用于在线程之间、线程与协程之间、线程内的协程之间、线程间的协程之间进行消息传递的消息队列。下图为使用 libfiber 中协程条件变量时的交互过程：</p>
+<p><img src="/img/fiber_cond.png" srcset="/img/loading.gif" lazyload alt="fiber_cond"></p>
+<p>这是一个典型的 <code>生产者-消费者</code> 问题，通过组合使用协程条件变量和事件锁可以轻松实现。</p>
+<h4 id="3-3-4、协程信号量"><a href="#3-3-4、协程信号量" class="headerlink" title="3.3.4、协程信号量"></a>3.3.4、协程信号量</h4><p>使用网络协程库编写的网络服务很容易实现高并发功能，可以接入大量的客户端连接，但是后台系统（如：数据库）却未必支持高并发，即使是支持高并的缓存系统（如 Redis）当连接数达高时性能也会下降，所以协程服务模块不能将前端的并发压力传递到后端，给后台系统造成很大的压力，我们需要提供一种高并发连接卸载机制，以保证后台系统可以平稳地运行，在 libfiber 中提供了协程信号量（源码见：fiber_semc.c），下面是使用 libfiber 中的协程信号量对于后台系统的并发连接卸载保护示意图：</p>
+<p><img src="/img/fiber_sem.png" srcset="/img/loading.gif" lazyload alt="fiber_sem"></p>
+<p>当有大量协程需要访问后台系统时，通过协程信号量将大量的协程『挡在外面』，只允许部分协程与后端系统建立连接。<br><strong>注：</strong> 目前 libfiber 的协程信号量仅用在同一线程内部，还不能跨线程使用，要想在多线程环境中使用，需在每个线程内部为协程创建独立的协程信号量。</p>
+<h3 id="3-4、协程共享栈"><a href="#3-4、协程共享栈" class="headerlink" title="3.4、协程共享栈"></a>3.4、协程共享栈</h3><p>协程网络编程相对于非阻塞网络编程简单太多，大大方便了开发者编写支持高并发的服务程序；但对于有栈协程，意味着每个协程都要占用一段内存用来存放协程栈，所以并发越高，内存占用越多也成为有栈协程的一大弊端，但仔细分析函数压栈出栈及协程挂起唤醒过程，我们会发现在协程挂起时所占用的栈空间大小要远小于协程实际运行过程中占用的最大栈空间大小（考虑到应用业务逻辑的复杂性，可能会存在大量的函数及变量压栈过程，所以占用的栈空间会比较大），而在一个 libfiber 线程空间中只有一个运行栈，所以只需保证一个较大的运行栈空间即可，当协程被挂起时只需将其栈从运行栈中拷贝并保存出来（这个栈空间相对要小一些），而被挂起的协程被唤醒时，只需将其保存的栈拷贝到线程的运行栈上即可。在实践中这的确可以大幅减少高并发时的内存使用，虽然进行栈拷贝时会耗费一些时间，但整体影响并不太大。</p>
+<p>相对于栈拷贝时的时间损耗，在使用共享栈方式编程时有一点需要特别注意：创建在栈上的变量不能在协程之间或协程与线程之间共享，即是说，一个协程 F1 中的变量 A 传递给另一个协程 F2，并等待 F2 处理后返回，此时的 A 变量不能被创建在 F1 的栈上，因为运行栈在由 F1 切换到 F2 时，变量 A 的地址空间“暂时消失了”，此时变成了 F2 的栈空间，如果该变量在 F2 中继续被使用的话，就会存在地址非法使用的问题；解决变量在协程间共享的方法是将变量创建在堆上（即用 malloc 或 new 创建）。</p>
+<p>注：共享栈的想法最初应该是在腾讯的 libco 中提出的，应该也是为了解决大并发时的内存占用问题。</p>
+<h3 id="3-5、域名解析"><a href="#3-5、域名解析" class="headerlink" title="3.5、域名解析"></a>3.5、域名解析</h3><p>网络协程库既然面向网络，自然离不开域名的协程化支持，现在很多网络协程库的设计者往往忽视了这一点，有些网络协程库在使用系统 API 进行域名解析时为了防止阻塞协程调度器，将域名解析过程（即调用 gethostbyname&#x2F;getaddrinfo）扔给独立的线程去执行，当调用系统 API 进行域名解析并发量较大时必然会造成很多线程资源被占用。在 libfiber 早期通过集成第三方 dns 源码，实现了域名解析过程的协程化，基本满足了大部分服务端应用系统对于域名解析的需求；后来因为跨平台性及代码安全性的需要，在 libfiber 中实现了与域名解析相关的 DNS 协议，替换了第三方 DNS 库。</p>
+<h3 id="3-6、Hook-系统-API"><a href="#3-6、Hook-系统-API" class="headerlink" title="3.6、Hook 系统 API"></a>3.6、Hook 系统 API</h3><p>相对于网络协程的出现时间，很多网络库很早就存在了，并且大部分已有的网络库都是阻塞式的，要改造这些网络库使之协程化的成本是非常巨大的，我们不可能采用协程方式将这些网络库重新实现一遍，目前一个广泛采用的方案是 Hook 与 IO 相关的系统中 API，在 Unix 平台上 Hook 系统 API 相对简单，在初始化时，先加载并保留系统 API 的原始地址，然后编写一个与系统 API 函数名相同且参数也相同的函数，将这段代码与应用代码一起编译，则编译器会优先使用这些 Hook API，下面的代码给出了在 Unix 平台上 Hook 系统 API 的简单示例：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs C"><span class="hljs-keyword">typedef</span> <span class="hljs-title function_">ssize_t</span> <span class="hljs-params">(*read_fn)</span><span class="hljs-params">(<span class="hljs-type">int</span>, <span class="hljs-type">void</span> *, <span class="hljs-type">size_t</span>)</span>;<br><span class="hljs-type">static</span> read_fn __sys_read = <span class="hljs-literal">NULL</span>;<br><br><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">hook_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>    __sys_read = (read_fn) dlsym(RTLD_NEXT, <span class="hljs-string">&quot;read&quot;</span>);<br>    assert(__sys_read);<br>&#125;<br><br><span class="hljs-type">ssize_t</span> <span class="hljs-title function_">read</span><span class="hljs-params">(<span class="hljs-type">int</span> fd, <span class="hljs-type">void</span> *buf, <span class="hljs-type">size_t</span> count)</span> &#123;<br>    <span class="hljs-keyword">if</span> (__sys_read == <span class="hljs-literal">NULL</span>) &#123;<br>        hook_init();<br>    &#125;<br>    <span class="hljs-keyword">return</span> __sys_read(fd, buf, count);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在 libfiber 中 hook 了大部分与 IO 及网络相关的系统 API，下面列出 libfiber 所 Hook 的系统 API：</p>
+<ul>
+<li><strong>IO 相关 API</strong><ul>
+<li><strong>读 API：</strong> read&#x2F;readv&#x2F;recv&#x2F;recvfrom&#x2F;recvmsg；</li>
+<li><strong>写 API：</strong> write&#x2F;writev&#x2F;send&#x2F;sendto&#x2F;sendmsg&#x2F;sendfile64；</li>
+</ul>
+</li>
+<li><strong>网络相关 API</strong><ul>
+<li><strong>套接字 API：</strong> socket&#x2F;listen&#x2F;accept&#x2F;connect；</li>
+<li><strong>事件引擎 API：</strong> select&#x2F;poll，epoll: epoll_create, epoll_ctl, epoll_wait；</li>
+<li><strong>域名解析 API：</strong> gethostbyname&#x2F;gethostbyname_r, getaddrinfo&#x2F;freeaddrinfo。</li>
+</ul>
+</li>
+</ul>
+<p>通过 Hook API 方式，libfiber 已经可以使 Mysql 客户端库、一些 HTTP 通信库及 Redis 客户端库的网络通信部分协程化，这样在使用网络协程编写服务端应用程序时，大大降低了编程复杂度及改造成本。</p>
+<p>为了在 Windows 平台上 Hook IO API，libfiber 集成了微软的一个开源库 detours，但该库是用 C++ 编写的，所以只能集成在 libfiber 的 c++ 模块中，即用户在使用时只能通过使用 libfiber c++ 库达到 Hook 系统 IO API 的目的。</p>
+<h2 id="四、爱奇艺核心业务的协程实践"><a href="#四、爱奇艺核心业务的协程实践" class="headerlink" title="四、爱奇艺核心业务的协程实践"></a>四、爱奇艺核心业务的协程实践</h2><h3 id="4-1、CDN-核心模块使用协程"><a href="#4-1、CDN-核心模块使用协程" class="headerlink" title="4.1、CDN 核心模块使用协程"></a>4.1、CDN 核心模块使用协程</h3><p>在爱奇艺的自建 CDN 系统中，作为数据回源及本地缓存的核心软件，奇迅承担了重要角色，该模块采用多线程多协程的软件架构设计，如下所示：</p>
+<p><img src="/img/qixun.png" srcset="/img/loading.gif" lazyload alt="qixun"></p>
+<p>奇迅回源架构设计的特点总结如下：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>高并发</td>
+<td>采用网络协程方式，支持高并发接入，同时简化程序设计</td>
+</tr>
+<tr>
+<td>高性能</td>
+<td>采用线程池 + 协程 + 连接池 + 内存池技术，提高业务处理性能</td>
+</tr>
+<tr>
+<td>高吞吐</td>
+<td>采用磁盘内存映射及零拷贝技术，提升磁盘及网络 IO 吞吐能力</td>
+</tr>
+<tr>
+<td>低回源</td>
+<td>合并相同请求，支持部分回源及部分缓存，大大降低回源带宽</td>
+</tr>
+<tr>
+<td>开播快</td>
+<td>采用流式数据读取方式，提升视频开播速度</td>
+</tr>
+<tr>
+<td>可扩展</td>
+<td>模块化分层设计，易于扩展新功能</td>
+</tr>
+<tr>
+<td>易维护</td>
+<td>采用统一服务器编程框架，易管理，好维护</td>
+</tr>
+</tbody></table>
+<p>奇迅的前后端通信模块均采用网络协程方式，分为前端连接接入层和后端下载任务层，为了有效地使用多核，前后端模块均启动多个线程（每个线程运行一个独立的协程调度器）；对于前端连接接入模块，由于采用协程方式，所以：</p>
+<ul>
+<li>支持更高的客户端并发连接；</li>
+<li>允许更多慢连接的存在，而不会消耗更多秕资源；</li>
+<li>更有助于客户端与奇迅之间保持长连接，提升响应性能。</li>
+</ul>
+<p>对于后端下载模块，由于采用协程方式，在数据回源时允许建立更多的并发连接去多个源站下载数据，从而获得更快的下载速度；同时，为了节省带宽，奇迅采用合并回源策略，即当前端多个客户端请求同一段数据时，下载模块将会合并相同的请求，向源站发起一份数据请求，在合并回源请求过程中，因数据共享原因，必然存在如 “3.3.2、多线程之间的协程互斥”章节所提到的多个线程之间的协程同步互斥的需求，通过使用 libfiber 中的事件锁完美地解决了一这需求（其实，当初事件锁就是为了满足奇迅的这一需求而设计编写）。</p>
+<h3 id="4-2、高性能-DNS-模块使用协程"><a href="#4-2、高性能-DNS-模块使用协程" class="headerlink" title="4.2、高性能 DNS 模块使用协程"></a>4.2、高性能 DNS 模块使用协程</h3><p>DNS 做为互联网的基础设施，在整个互联网中发挥着举足轻重的作用，爱奇艺为了满足自身业务的发展需要，自研了高性能 DNS（简称 HPDNS），该 DNS 的软件架构如下图所示：</p>
+<p><img src="/img/hpdns.png" srcset="/img/loading.gif" lazyload alt="hpdns"></p>
+<p>HPDNS 服务的特点如下：</p>
+<style>
+table th:first-of-type {
+    width: 50px;
+}
+</style>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>高性能</td>
+<td>启用 Linux 3.0 内核的 REUSEPORT 功能，提升多线程并行收发包的能力</td>
+</tr>
+<tr>
+<td>&amp;nbsp;</td>
+<td>采用 Linux 3.0 内核的 recvmmsg&#x2F;sendmmsg API，提升单次 IO 数据包收发能力</td>
+</tr>
+<tr>
+<td>&amp;nbsp;</td>
+<td>采用内存预分配策略，减少内存动态分配&#x2F;释放时的“锁”冲突</td>
+</tr>
+<tr>
+<td>&amp;nbsp;</td>
+<td>针对 TCP 服务模式，采用网络协程框架，最大化 TCP 并发怎能能力</td>
+</tr>
+<tr>
+<td>高可用</td>
+<td>采用RCU（Read Copy Update）方式更新视图数据及配置项，无需停止服务，且不影响性能</td>
+</tr>
+<tr>
+<td>&amp;nbsp;</td>
+<td>网卡 IP 地址变化自动感知（即可自动添加新 IP 或摘除老IP而不必停止服务）</td>
+</tr>
+<tr>
+<td>&amp;nbsp;</td>
+<td>采用 Keepalived 保证服务高可用</td>
+</tr>
+<tr>
+<td>易管理</td>
+<td>由 master 服务管理模块管理 DNS 进程，控制 DNS 进程的启动、停止、重读配置&#x2F;数据、异常重启及异常报警等</td>
+</tr>
+</tbody></table>
+<p>由于 DNS 协议要求 DNS 服务端需要同时支持 UDP 及 TCP 两种通信方式，除了要求 UDP 模块具备高性能外，对 TCP 模块也要求支持高并发及高性能，该模块的网络通信部分使用 libfiber 编写，从而支持更高的并发连接，同时具备更高的性能，又因启用多个线程调度器，从而可以更加方便地使用多核。</p>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><p>本文讲述了爱奇艺开源项目 libfiber 网络协程库的设计原理及核心设计要点，描述了 libfiber 的设计特点及优缺点，方便读者了解网络协程的设计原理及运行机制，做到知其然更知其所以然；本文还从爱奇艺自身的项目实践出发，总结了在应用网络协程编程时遇到的问题及解决方案，使读者能够更加全面地了解编写网络协程类应用的注意事项。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%8D%8F%E7%A8%8B%E7%BC%96%E7%A8%8B/" class="category-chain-item">协程编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8D%8F%E7%A8%8B%E7%BC%96%E7%A8%8B/">#协程编程</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>iQiYi使用网络协程编写高并发应用实践</div>
+      <div>https://acl-dev.cn/2020/06/05/about_fiber/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2020年6月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2020/01/15/ssl/" title="使用SSL中对数据进行加密传输">
+                        <span class="hidden-mobile">使用SSL中对数据进行加密传输</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

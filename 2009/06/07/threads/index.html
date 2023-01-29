@@ -1,0 +1,736 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、概述在当今强调多核开发的年代，要求程序员能够写出高并发的程序，而利用多个核一般有两种方式：采用多线程方式或多进程方式。每处理一个新任务时如果临时产生一个线程或进程且处理完任务后线程或进程便立即退出，显示这种方式是非常低效的，于是人们一般采用线程池的模型（这在JAVA 或 .NET 中非常普遍）或多进程进程池模型（这一般在UNIX平台应用较多）。此外，对于线程池或进程池模型又分为两种情形：常驻留">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用ACL库开发高并发半驻留式线程池程序">
+<meta property="og:url" content="https://acl-dev.cn/2009/06/07/threads/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="一、概述在当今强调多核开发的年代，要求程序员能够写出高并发的程序，而利用多个核一般有两种方式：采用多线程方式或多进程方式。每处理一个新任务时如果临时产生一个线程或进程且处理完任务后线程或进程便立即退出，显示这种方式是非常低效的，于是人们一般采用线程池的模型（这在JAVA 或 .NET 中非常普遍）或多进程进程池模型（这一般在UNIX平台应用较多）。此外，对于线程池或进程池模型又分为两种情形：常驻留">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2009-06-07T05:41:00.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.179Z">
+<meta property="article:author" content="zsxxsz">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>利用ACL库开发高并发半驻留式线程池程序 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="利用ACL库开发高并发半驻留式线程池程序"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2009-06-07 13:41" pubdate>
+          2009年6月7日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          80 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">利用ACL库开发高并发半驻留式线程池程序</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>在当今强调多核开发的年代，要求程序员能够写出高并发的程序，而利用多个核一般有两种方式：采用多线程方式或多进程方式。每处理一个新任务时如果临时产生一个线程或进程且处理完任务后线程或进程便立即退出，显示这种方式是非常低效的，于是人们一般采用线程池的模型（这在JAVA 或 .NET 中非常普遍）或多进程进程池模型（这一般在UNIX平台应用较多）。此外，对于线程池或进程池模型又分为两种情形：常驻留内存或半驻留内存，常驻内存是指预先产生一批线程或进程，等待新任务到达，这些线程或进程即使在空闲状态也会常驻内存；半驻留内存是指当来新任务时如果线程池或进程池没有可利用线程或进程则启动新的线程或进程来处理新任务，处理完后，线程或进程并不立即退出，而是空闲指定时间，如果在空闲阀值时间到达前有新任务到达则立即处理新任务，如果到达空闲超时后依然没有新任务到达，则这些空闲的线程或进程便退出，以让出系统资源。所以，对比常驻内存方式和半驻留内存方式，不难看出半驻留方式更有按需分配的意味。</p>
+<p>下面仅以ACL框架中的半驻留线程池模型为例介绍了如何写一个半驻留线程池的程序。</p>
+<h2 id="二、半驻留线程池函数接口说明"><a href="#二、半驻留线程池函数接口说明" class="headerlink" title="二、半驻留线程池函数接口说明"></a>二、半驻留线程池函数接口说明</h2><h3 id="2-1）线程池的创建、销毁及任务添加等接口"><a href="#2-1）线程池的创建、销毁及任务添加等接口" class="headerlink" title="2.1）线程池的创建、销毁及任务添加等接口"></a>2.1）线程池的创建、销毁及任务添加等接口</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 创建一个线程池对象</span><br><span class="hljs-comment"> * @param attr &#123;acl_pthread_pool_attr_t*&#125; 线程池创建时的属性，如果该参数为空，</span><br><span class="hljs-comment"> *  则采用默认参数: ACL_PTHREAD_POOL_DEF_XXX</span><br><span class="hljs-comment"> * @return &#123;acl_pthread_pool_t*&#125;, 如果不为空则表示成功，否则失败</span><br><span class="hljs-comment">*/</span><br><span class="hljs-function">ACL_API <span class="hljs-type">acl_pthread_pool_t</span> *<span class="hljs-title">acl_pthread_pool_create</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">acl_pthread_pool_attr_t</span> *attr)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 销毁一个线程池对象, 成功销毁后该对象不能再用.</span><br><span class="hljs-comment"> * @param thr_pool &#123;acl_pthread_pool_t*&#125; 线程池对象，不能为空</span><br><span class="hljs-comment"> * @return &#123;int&#125; 0: 成功; != 0: 失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_pthread_pool_destroy</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 向线程池添加一个任务</span><br><span class="hljs-comment"> * @param thr_pool &#123;acl_pthread_pool_t*&#125; 线程池对象，不能为空</span><br><span class="hljs-comment"> * @param run_fn &#123;void (*)(*)&#125; 当有可用工作线程时所调用的回调处理函数</span><br><span class="hljs-comment"> * @param run_arg &#123;void*&#125; 回调函数 run_fn 所需要的回调参数</span><br><span class="hljs-comment"> * @return &#123;int&#125; 0: 成功; != 0: 失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_pthread_pool_add</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool,</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-type">void</span> (*run_fn)(<span class="hljs-type">void</span> *), <span class="hljs-type">void</span> *run_arg)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当前线程池中的线程数</span><br><span class="hljs-comment"> * @param thr_pool &#123;acl_pthread_pool_t*&#125; 线程池对象，不能为空</span><br><span class="hljs-comment"> * @return &#123;int&#125; 返回线程池中的总线程数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_pthread_pool_size</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2）线程池属性设置接口"><a href="#2-2）线程池属性设置接口" class="headerlink" title="2.2）线程池属性设置接口"></a>2.2）线程池属性设置接口</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 初始化线程池属性值</span><br><span class="hljs-comment"> * @param attr &#123;acl_pthread_pool_attr_t*&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_pthread_pool_attr_init</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_attr_t</span> *attr)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置线程池属性中的最大堆栈大小(字节)</span><br><span class="hljs-comment"> * @param attr &#123;acl_pthread_pool_attr_t*&#125;</span><br><span class="hljs-comment"> * @param size &#123;size_t&#125;</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_pthread_pool_attr_set_stacksize</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_attr_t</span> *attr, <span class="hljs-type">size_t</span> size)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置线程池属性中的最大线程数限制值</span><br><span class="hljs-comment"> * @param attr &#123;acl_pthread_pool_attr_t*&#125;</span><br><span class="hljs-comment"> * @param threads_limit &#123;int&#125; 线程池中的最大线程数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_pthread_pool_attr_set_threads_limit</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_attr_t</span> *attr, </span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">int</span> threads_limit)</span></span>;<br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 设置线程池属性中线程空闲超时值</span><br><span class="hljs-comment"> * @param attr &#123;acl_pthread_pool_attr_t*&#125;</span><br><span class="hljs-comment"> * @param idle_timeout &#123;int&#125; 线程空闲超时时间(秒)</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_pthread_pool_attr_set_idle_timeout</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_attr_t</span> *attr, </span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">int</span> idle_timeout)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3）线程池中的工作线程创建、退出时设置回调函数接口"><a href="#2-3）线程池中的工作线程创建、退出时设置回调函数接口" class="headerlink" title="2.3）线程池中的工作线程创建、退出时设置回调函数接口"></a>2.3）线程池中的工作线程创建、退出时设置回调函数接口</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 添加注册函数，在线程创建后立即执行此初始化函数</span><br><span class="hljs-comment"> * @param thr_pool &#123;acl_pthread_pool_t*&#125; 线程池对象，不能为空</span><br><span class="hljs-comment"> * @param init_fn &#123;int (*)(void*)&#125; 工作线程初始化函数, 如果该函数返回 &lt; 0,</span><br><span class="hljs-comment"> *  则该线程自动退出。</span><br><span class="hljs-comment"> * @param init_arg &#123;void*&#125; init_fn 所需要的参数</span><br><span class="hljs-comment"> * @return &#123;int&#125; 0: OK; != 0: Error.</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_pthread_pool_atinit</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool,</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-type">int</span> (*init_fn)(<span class="hljs-type">void</span> *), <span class="hljs-type">void</span> *init_arg)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 添加注册函数，在线程退出立即执行此初函数</span><br><span class="hljs-comment"> * @param thr_pool &#123;acl_pthread_pool_t*&#125; 线程池对象，不能为空</span><br><span class="hljs-comment"> * @param free_fn &#123;void (*)(void*)&#125; 工作线程退出前必须执行的函数</span><br><span class="hljs-comment"> * @param free_arg &#123;void*&#125; free_fn 所需要的参数</span><br><span class="hljs-comment"> * @return &#123;int&#125; 0: OK; != 0: Error.</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_pthread_pool_atfree</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool,</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-type">void</span> (*free_fn)(<span class="hljs-type">void</span> *), <span class="hljs-type">void</span> *free_arg)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、半驻留线程池例子"><a href="#三、半驻留线程池例子" class="headerlink" title="三、半驻留线程池例子"></a>三、半驻留线程池例子</h2><h3 id="3-1）程序代码"><a href="#3-1）程序代码" class="headerlink" title="3.1）程序代码"></a>3.1）程序代码</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;lib_acl.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;assert.h&gt;</span></span><br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 用户自定义数据结构</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">typedef</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">THREAD_CTX</span> &#123;<br>	<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool;<br>	<span class="hljs-type">int</span>   i;<br>&#125; THREAD_CTX;<br><br><span class="hljs-comment">/* 全局性静态变量 */</span><br><span class="hljs-type">static</span> <span class="hljs-type">acl_pthread_pool_t</span> *__thr_pool = <span class="hljs-literal">NULL</span>;<br><br><span class="hljs-comment">/* 线程局部存储变量(C99支持此种方式声明，方便许多) */</span><br><span class="hljs-type">static</span> __thread <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> __local = <span class="hljs-number">0</span>;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">work_thread_fn</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg)</span></span><br><span class="hljs-function"></span>&#123;<br>	THREAD_CTX *ctx = (THREAD_CTX*) arg; <span class="hljs-comment">/* 获得用户自定义对象 */</span><br>	<span class="hljs-type">int</span>   i = <span class="hljs-number">5</span>;<br><br>	<span class="hljs-comment">/* 仅是验证参数传递过程 */</span><br>	<span class="hljs-built_in">assert</span>(ctx-&gt;thr_pool == __thr_pool);<br><br>	<span class="hljs-keyword">while</span> (i-- &gt; <span class="hljs-number">0</span>) &#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;thread start! tid=%d, i=%d, __local=%d\r\n&quot;</span>,<br>				<span class="hljs-built_in">acl_pthread_self</span>(), ctx-&gt;i, __local);<br>		<span class="hljs-comment">/* 在本线程中将线程局部变量加1 */</span><br>		__local++;<br>		<span class="hljs-built_in">sleep</span>(<span class="hljs-number">1</span>);<br>	&#125;<br><br>	<span class="hljs-built_in">acl_myfree</span>(ctx);<br><br>	<span class="hljs-comment">/* 至此，该工作线程进入空闲状态，直到空闲超时退出 */</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">int</span> <span class="hljs-title">on_thread_init</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span> *myname = <span class="hljs-string">&quot;on_thread_init&quot;</span>;<br>	<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool = (<span class="hljs-type">acl_pthread_pool_t</span>*) arg;<br><br>	<span class="hljs-comment">/* 判断一下，仅是为了验证参数传递过程 */</span><br>	<span class="hljs-built_in">assert</span>(thr_pool == __thr_pool);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: thread(%d) init now\r\n&quot;</span>, myname, <span class="hljs-built_in">acl_pthread_self</span>());<br><br>	<span class="hljs-comment">/* 返回0表示继续执行该线程获得的新任务，返回-1表示停止执行该任务 */</span><br>	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">on_thread_exit</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span> *myname = <span class="hljs-string">&quot;on_thread_exit&quot;</span>;<br>	<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool = (<span class="hljs-type">acl_pthread_pool_t</span>*) arg;<br><br>	<span class="hljs-comment">/* 判断一下，仅是为了验证参数传递过程 */</span><br>	<span class="hljs-built_in">assert</span>(thr_pool == __thr_pool);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s: thread(%d) exit now\r\n&quot;</span>, myname, <span class="hljs-built_in">acl_pthread_self</span>());<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">run_thread_pool</span><span class="hljs-params">(<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool)</span></span><br><span class="hljs-function"></span>&#123;<br>	THREAD_CTX *ctx;  <span class="hljs-comment">/* 用户自定义参数 */</span><br><br>	<span class="hljs-comment">/* 设置全局静态变量 */</span><br>	__thr_pool = thr_pool;<br><br>	<span class="hljs-comment">/* 设置线程开始时的回调函数 */</span><br>	(<span class="hljs-type">void</span>) <span class="hljs-built_in">acl_pthread_pool_atinit</span>(thr_pool, on_thread_init, thr_pool);<br><br>	<span class="hljs-comment">/* 设置线程退出时的回调函数 */</span><br>	(<span class="hljs-type">void</span>) <span class="hljs-built_in">acl_pthread_pool_atfree</span>(thr_pool, on_thread_exit, thr_pool);<br><br>	ctx = (THREAD_CTX*) <span class="hljs-built_in">acl_mycalloc</span>(<span class="hljs-number">1</span>, <span class="hljs-built_in">sizeof</span>(THREAD_CTX));<br>	<span class="hljs-built_in">assert</span>(ctx);<br>	ctx-&gt;thr_pool = thr_pool;<br>	ctx-&gt;i = <span class="hljs-number">0</span>;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * 向线程池中添加第一个任务，即启动第一个工作线程</span><br><span class="hljs-comment">	 * @param thr_pool 线程池句柄</span><br><span class="hljs-comment">	 * @param workq_thread_fn 工作线程的回调函数</span><br><span class="hljs-comment">	 * @param ctx 用户定义参数</span><br><span class="hljs-comment">	 */</span><br>	<span class="hljs-built_in">acl_pthread_pool_add</span>(thr_pool, work_thread_fn, ctx);<br>	<span class="hljs-built_in">sleep</span>(<span class="hljs-number">1</span>);<br><br>	ctx = (THREAD_CTX*) <span class="hljs-built_in">acl_mycalloc</span>(<span class="hljs-number">1</span>, <span class="hljs-built_in">sizeof</span>(THREAD_CTX));<br>	<span class="hljs-built_in">assert</span>(ctx);<br>	ctx-&gt;thr_pool = thr_pool;<br>	ctx-&gt;i = <span class="hljs-number">1</span>;<br>	<span class="hljs-comment">/* 向线程池中添加第二个任务，即启动第二个工作线程 */</span><br>	<span class="hljs-built_in">acl_pthread_pool_add</span>(thr_pool, work_thread_fn, ctx);<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc acl_unused, <span class="hljs-type">char</span> *argv[] acl_unused)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool;<br>	<span class="hljs-type">int</span>  max_threads = <span class="hljs-number">20</span>;  <span class="hljs-comment">/* 最多并发20个线程 */</span><br>	<span class="hljs-type">int</span>  idle_timeout = <span class="hljs-number">10</span>; <span class="hljs-comment">/* 每个工作线程空闲10秒后自动退出 */</span><br>	<span class="hljs-type">acl_pthread_pool_attr_t</span> attr;<br><br>	<span class="hljs-built_in">acl_pthread_pool_attr_init</span>(&amp;attr);<br>	<span class="hljs-built_in">acl_pthread_pool_attr_set_threads_limit</span>(&amp;attr, max_threads);<br>	<span class="hljs-built_in">acl_pthread_pool_attr_set_idle_timeout</span>(&amp;attr, idle_timeout);<br><br>	<span class="hljs-comment">/* 创建半驻留线程句柄 */</span><br>	thr_pool = <span class="hljs-built_in">acl_pthread_pool_create</span>(&amp;attr);<br>	<span class="hljs-built_in">assert</span>(thr_pool);<br>	<span class="hljs-built_in">run_thread_pool</span>(thr_pool);<br><br>	<span class="hljs-keyword">if</span> (<span class="hljs-number">0</span>) &#123;<br>		<span class="hljs-comment">/* 如果立即运行 acl_pthread_pool_destroy，则由于调用了线程池销毁函数，</span><br><span class="hljs-comment">		 * 主线程便立刻通知空闲线程退出，所有空闲线程不必等待空闲超时时间便可退出,</span><br><span class="hljs-comment">		 */</span><br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;&gt; wait all threads to be idle and free thread pool\r\n&quot;</span>);<br>		<span class="hljs-comment">/* 立即销毁线程池 */</span><br>		<span class="hljs-built_in">acl_pthread_pool_destroy</span>(thr_pool);<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		<span class="hljs-comment">/* 因为不立即调用 acl_pthread_pool_destroy，所有所有空闲线程都是当空闲</span><br><span class="hljs-comment">		 * 超时时间到达后才退出</span><br><span class="hljs-comment">		 */</span><br>		<span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) &#123;<br>			<span class="hljs-type">int</span>   ret;<br><br>			ret = <span class="hljs-built_in">acl_pthread_pool_size</span>(thr_pool);<br>			<span class="hljs-keyword">if</span> (ret == <span class="hljs-number">0</span>)<br>				<span class="hljs-keyword">break</span>;<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;&gt; current threads in thread pool is: %d\r\n&quot;</span>, ret);<br>			<span class="hljs-built_in">sleep</span>(<span class="hljs-number">1</span>);<br>		&#125;<br>		<span class="hljs-comment">/* 线程池中的工作线程数为0时销毁线程池 */</span><br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;&gt; all worker thread exit now\r\n&quot;</span>);<br>		<span class="hljs-built_in">acl_pthread_pool_destroy</span>(thr_pool);<br>	&#125;<br><br>	<span class="hljs-comment">/* 主线程等待用户在终端输入任意字符后退出 */</span><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;&gt; enter any key to exit\r\n&quot;</span>);<br>	<span class="hljs-built_in">getchar</span>();<br><br>	<span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-编译链接"><a href="#3-2-编译链接" class="headerlink" title="3.2) 编译链接"></a>3.2) 编译链接</h3><p>从　<a target="_blank" rel="noopener" href="http://www.sourceforge.net/projects/acl/">http://www.sourceforge.net/projects/acl/</a> 站点下载 acl_project 代码，在WIN32平台下请用VC2003编译，打开 acl_project\win32_build\vc\acl_project_vc2003.sln 编译后在目录　acl_project\dist\lib_acl\lib\win32　下生成lib_acl_vc2003.lib, 然后在示例的控制台工程中包含该库，并包含acl_project\lib_acl\include　下的 lib_acl.h 头文件，编译上述源代码即可。<br>因为本例子代码在 ACL 的例子里有，所以可以直接编译 acl_project\win32_build\vc\samples\samples_vc2003.sln 中的 thread_pool 项目即可。</p>
+<h3 id="3-3-运行"><a href="#3-3-运行" class="headerlink" title="3.3) 运行"></a>3.3) 运行</h3><p>运行示例程序后，在我的机器的显示结果如下：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs routeros">on_thread_init: thread(23012) init now<br>thread start! <span class="hljs-attribute">tid</span>=23012, <span class="hljs-attribute">i</span>=0, <span class="hljs-attribute">__local</span>=0<br>thread start! <span class="hljs-attribute">tid</span>=23012, <span class="hljs-attribute">i</span>=0, <span class="hljs-attribute">__local</span>=1<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>on_thread_init: thread(23516) init now<br>thread start! <span class="hljs-attribute">tid</span>=23516, <span class="hljs-attribute">i</span>=1, <span class="hljs-attribute">__local</span>=0<br>thread start! <span class="hljs-attribute">tid</span>=23516, <span class="hljs-attribute">i</span>=1, <span class="hljs-attribute">__local</span>=1<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>thread start! <span class="hljs-attribute">tid</span>=23012, <span class="hljs-attribute">i</span>=0, <span class="hljs-attribute">__local</span>=2<br>thread start! <span class="hljs-attribute">tid</span>=23516, <span class="hljs-attribute">i</span>=1, <span class="hljs-attribute">__local</span>=2<br>thread start! <span class="hljs-attribute">tid</span>=23012, <span class="hljs-attribute">i</span>=0, <span class="hljs-attribute">__local</span>=3<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>thread start! <span class="hljs-attribute">tid</span>=23516, <span class="hljs-attribute">i</span>=1, <span class="hljs-attribute">__local</span>=3<br>thread start! <span class="hljs-attribute">tid</span>=23012, <span class="hljs-attribute">i</span>=0, <span class="hljs-attribute">__local</span>=4<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>thread start! <span class="hljs-attribute">tid</span>=23516, <span class="hljs-attribute">i</span>=1, <span class="hljs-attribute">__local</span>=4<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 2<br>on_thread_exit: thread(23012) exit now<br>&gt; current threads <span class="hljs-keyword">in</span> thread<span class="hljs-built_in"> pool </span>is: 1<br>on_thread_exit: thread(23516) exit now<br>&gt; all worker thread exit now<br>&gt; enter any key <span class="hljs-keyword">to</span> exit<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、小结"><a href="#四、小结" class="headerlink" title="四、小结"></a>四、小结</h2><p>可以看出，使用ACL库创建半驻留式高并发多线程程序是比较简单的，ACL线程池库的接口定义及实现尽量与POSIX中规定的POSIX线程的实现接口相似，创建与使用ACL线程池库的步骤如下：</p>
+<ul>
+<li>acl_pthread_pool_attr_init: 初始化创建线程池对象所需要属性信息(可以通过 acl_pthread_pool_attr_set_threads_limit 设置线程池最大并发数及用 acl_pthread_pool_attr_set_idle_timeout 设置线程池中工作线程的空闲退出时间间隔)</li>
+<li>acl_pthread_pool_create: 创建线程池对象</li>
+<li>acl_pthread_pool_add: 向线程池中添加新任务，新任务将由线程池中的某一工作线程执行</li>
+<li>acl_pthread_pool_destroy: 通知并等待线程池中的工作线程执行完任务后退出，同时销毁线程池对象</li>
+</ul>
+<p>还可以在选择在创建线程池对象后，调用 acl_pthread_pool_atinit 设置工作线程第一次被创建时回调用户自定义函数过程，或当线程空闲退出后调用 acl_pthread_pool_atfree 中设置的回调函数。<br>另外，可以将创建线程池的过程进行一抽象，写成如下形式：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 创建半驻留线程池的过程</span><br><span class="hljs-comment"> * @return &#123;acl_pthread_pool_t*&#125; 新创建的线程池句柄</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">acl_pthread_pool_t</span> *<span class="hljs-title">create_thread_pool</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>	<span class="hljs-type">acl_pthread_pool_t</span> *thr_pool;  <span class="hljs-comment">/* 线程池句柄 */</span><br>	<span class="hljs-type">int</span>  max_threads = <span class="hljs-number">100</span>;  <span class="hljs-comment">/* 最多并发100个线程 */</span><br>	<span class="hljs-type">int</span>  idle_timeout = <span class="hljs-number">10</span>;  <span class="hljs-comment">/* 每个工作线程空闲10秒后自动退出 */</span><br>	<span class="hljs-type">acl_pthread_pool_attr_t</span> attr;  <span class="hljs-comment">/* 线程池初始化时的属性 */</span><br><br>	<span class="hljs-comment">/* 初始化线程池对象属性 */</span><br>	<span class="hljs-built_in">acl_pthread_pool_attr_init</span>(&amp;attr);<br>	<span class="hljs-built_in">acl_pthread_pool_attr_set_threads_limit</span>(&amp;attr, max_threads);<br>	<span class="hljs-built_in">acl_pthread_pool_attr_set_idle_timeout</span>(&amp;attr, idle_timeout);<br><br>	<span class="hljs-comment">/* 创建半驻留线程句柄 */</span><br>	thr_pool = <span class="hljs-built_in">acl_pthread_pool_create</span>(&amp;attr);<br>	<span class="hljs-built_in">assert</span>(thr_pool);<br>	<span class="hljs-keyword">return</span> (thr_pool);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>其实，利用ACL创建线程池还有一个简化接口（只所以叫 acl_thread_xxx 没有加 p, 是因为这个接口不太遵守 Posix的一些规范），如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 更简单地创建线程对象的方法</span><br><span class="hljs-comment"> * @param threads_limit &#123;int&#125;  线程池中最大并发线程数</span><br><span class="hljs-comment"> * @param idle_timeout &#123;int&#125; 工作线程空闲超时退出时间(秒)，如果为0则工作线程永不退出</span><br><span class="hljs-comment"> * @return &#123;acl_pthread_pool_t*&#125;, 如果不为空则表示成功，否则失败</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">acl_pthread_pool_t</span> *<span class="hljs-title">acl_thread_pool_create</span><span class="hljs-params">(<span class="hljs-type">int</span> threads_limit, <span class="hljs-type">int</span> idle_timeout)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>这样，用户就可以非常方便地创建自己的线程池了，而且别忘了，这个线程池还是可以是半驻留的（当然也是跨平台的，可以运行在　Linux&#x2F;Solaris&#x2F;FreeBSD&#x2F;Win32 的环境下）。</p>
+<p>github：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl/">https://github.com/acl-dev/acl/</a><br>gitee：<a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl/">https://gitee.com/acl-dev/acl/</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BA%BF%E7%A8%8B%E7%BC%96%E7%A8%8B/" class="category-chain-item">线程编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>利用ACL库开发高并发半驻留式线程池程序</div>
+      <div>https://acl-dev.cn/2009/06/07/threads/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2009年6月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2009/06/07/process_control/" title="ACL编程之父子进程机制，父进程守护子进程以防止子进程异常退出">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ACL编程之父子进程机制，父进程守护子进程以防止子进程异常退出</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

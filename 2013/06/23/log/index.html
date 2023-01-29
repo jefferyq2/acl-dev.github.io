@@ -1,0 +1,747 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="在使用 acl 库编写应用过程中，记录日志是一个非常重要的过程，acl 从几个层面提供了日志的不同记录方式。在 acl 的 C 库部分(lib_acl.a)，有三个源文件与日志记录相关：acl_msg.c&#x2F;acl_msg.h, acl_mylog.c&#x2F;acl_mylog.h, acl_debug.c&#x2F;acl_debug.h。其中，acl_mylog.c 是真正记录日志">
+<meta property="og:type" content="article">
+<meta property="og:title" content="acl 日志记录方式介绍">
+<meta property="og:url" content="https://acl-dev.cn/2013/06/23/log/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="在使用 acl 库编写应用过程中，记录日志是一个非常重要的过程，acl 从几个层面提供了日志的不同记录方式。在 acl 的 C 库部分(lib_acl.a)，有三个源文件与日志记录相关：acl_msg.c&#x2F;acl_msg.h, acl_mylog.c&#x2F;acl_mylog.h, acl_debug.c&#x2F;acl_debug.h。其中，acl_mylog.c 是真正记录日志">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-06-23T15:18:00.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.179Z">
+<meta property="article:author" content="zsxxsz">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>acl 日志记录方式介绍 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="acl 日志记录方式介绍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2013-06-23 23:18" pubdate>
+          2013年6月23日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          57 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">acl 日志记录方式介绍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在使用 acl 库编写应用过程中，记录日志是一个非常重要的过程，acl 从几个层面提供了日志的不同记录方式。在 acl 的 C 库部分(lib_acl.a)，有三个源文件与日志记录相关：acl_msg.c&#x2F;acl_msg.h, acl_mylog.c&#x2F;acl_mylog.h, acl_debug.c&#x2F;acl_debug.h。其中，acl_mylog.c 是真正记录日志的源文件，acl_msg.c 则是在 acl_mylog.c 基础之上的二次封装，acl_debug.c 是在 acl_msg.c 基础之上的再次封装。下面根据此三个日志源文件从三个层次描述日志记录的过程。</p>
+<h2 id="一、ac-mylog-c-x2F-acl-mylog-h"><a href="#一、ac-mylog-c-x2F-acl-mylog-h" class="headerlink" title="一、ac_mylog.c&#x2F;acl_mylog.h"></a>一、ac_mylog.c&#x2F;acl_mylog.h</h2><p>打开 acl_mylog.h 头文件，可以看到主要有三个函数：acl_open_log（打开日志文件），acl_write_to_log（写日志）以及acl_close_log（关闭日志）—（这三个函数是最基础的日志记录过程，当然我们不必直接使用）。该库支持两类日志记录方式：1、本地文件记录方式，2、与 syslog-ng 结合的网络日志记录方式。本地文件记录方式是 acl 日志库对外提供的最简单的日志记录方式，此方式不依赖于第三方日志库，但不应用在生产环境中，因为该方式不支持日志回滚等高级特性，为了便于生产上使用，所以产生了第二种方式（与 syslog-ng 结合），查看日志打开接口（如下）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 打开日志文件</span><br><span class="hljs-comment"> * @param recipients &#123;const char*&#125; 日志接收器列表，由 &quot;|&quot; 分隔，接收器</span><br><span class="hljs-comment"> *  可以是本地文件或远程套接口，如:</span><br><span class="hljs-comment"> *  /tmp/test.log|UDP:127.0.0.1:12345|TCP:127.0.0.1:12345|UNIX:/tmp/test.sock</span><br><span class="hljs-comment"> *  该配置要求将所有日志同时发给 /tmp/test.log, UDP:127.0.0.1:12345,</span><br><span class="hljs-comment"> *  TCP:127.0.0.1:12345 和 UNIX:/tmp/test.sock 四个日志接收器对象</span><br><span class="hljs-comment"> * @param plog_pre &#123;const char*&#125; 日志记录信息前的提示信息，建议用进程</span><br><span class="hljs-comment"> *  名填写此值</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_open_log</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *recipients, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *plog_pre)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>从上面的函数声明可以看出，acl 的日志记录允许同时输出至多个日志管道中（最简单的方式就是直接写入本地磁盘文件：&#x2F;tmp&#x2F;test.log），同时更应看到，其中有三个奇怪的日志文件表达方式：UDP:IP:PORT, TCP:IP:PORT, UNIX:&#x2F;xxx，其实这三种方式均是与 syslog-ng 相关，即分别表示：</p>
+<ul>
+<li>1、以 UDP 方式发送日志至 syslog-ng；</li>
+<li>2、以 TCP 方式发送日志至 syslog-ng；</li>
+<li>3、以 UNIX 域套接字方式发送日志至 syslog-ng。</li>
+</ul>
+<p>因为日志管理是一个非常复杂的过程，所以在 acl 除了提供最简单的日志文件记录外，更建议用户将日志输出至 syslog-ng 中（作者自己的项目也往往是这样做的）。</p>
+<h2 id="二、acl-msg-c-x2F-acl-msg-h"><a href="#二、acl-msg-c-x2F-acl-msg-h" class="headerlink" title="二、acl_msg.c&#x2F;acl_msg.h"></a>二、acl_msg.c&#x2F;acl_msg.h</h2><p>该日志库提供了更为高级的日志记录方法，不仅提供了灵活的日志记录函数，同时还允许用户注册自己的日志记录函数库，该日志库主要函数接口如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 日志打开函数</span><br><span class="hljs-comment"> * @param log_file &#123;const char*&#125; 日志接收者集合，由 &quot;|&quot; 分隔，接收器</span><br><span class="hljs-comment"> *  可以是本地文件或远程套接口，如:</span><br><span class="hljs-comment"> *  /tmp/test.log|UDP:127.0.0.1:12345|TCP:127.0.0.1:12345|UNIX:/tmp/test.sock</span><br><span class="hljs-comment"> *  该配置要求将所有日志同时发给 /tmp/test.log, UDP:127.0.0.1:12345,</span><br><span class="hljs-comment"> *  TCP:127.0.0.1:12345 和 UNIX:/tmp/test.sock 四个日志接收器对象</span><br><span class="hljs-comment"> * @param plog_pre &#123;const char*&#125; 日志记录信息前的提示信息，建议用进程</span><br><span class="hljs-comment"> * @param info_pre &#123;const char*&#125; 日志记录信息前的提示信息</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_open</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *log_file, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *info_pre)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 关闭日志函数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_close</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span>;<br><br>       上面是日志打开与关闭的函数，看上去算是相对简单。下面是几个日志记录的函数接口：<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 一般级别日志信息记录函数</span><br><span class="hljs-comment"> * @param fmt &#123;const char*&#125; 参数格式</span><br><span class="hljs-comment"> * @param ... 变参序列</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span>	WIN32</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_info</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...)</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>ACL_API <span class="hljs-type">void</span> __attribute__((format(printf,<span class="hljs-number">1</span>,<span class="hljs-number">2</span>)))<br>	<span class="hljs-built_in">acl_msg_info</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...);<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 警告级别日志信息记录函数</span><br><span class="hljs-comment"> * @param fmt &#123;const char*&#125; 参数格式</span><br><span class="hljs-comment"> * @param ... 变参序列</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span>	WIN32</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_warn</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...)</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>ACL_API <span class="hljs-type">void</span> __attribute__((format(printf,<span class="hljs-number">1</span>,<span class="hljs-number">2</span>)))<br>	<span class="hljs-built_in">acl_msg_warn</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...);<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 错误级别日志信息记录函数</span><br><span class="hljs-comment"> * @param fmt &#123;const char*&#125; 参数格式</span><br><span class="hljs-comment"> * @param ... 变参序列</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span>	WIN32</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_error</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...)</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>ACL_API <span class="hljs-type">void</span> __attribute__((format(printf,<span class="hljs-number">1</span>,<span class="hljs-number">2</span>)))<br>	<span class="hljs-built_in">acl_msg_error</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...);<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 致命级别日志信息记录函数</span><br><span class="hljs-comment"> * @param fmt &#123;const char*&#125; 参数格式</span><br><span class="hljs-comment"> * @param ... 变参序列</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span>	WIN32</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_fatal</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...)</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>ACL_API <span class="hljs-type">void</span> __attribute__((format(printf,<span class="hljs-number">1</span>,<span class="hljs-number">2</span>)))<br>	<span class="hljs-built_in">acl_msg_fatal</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...);<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 恐慌级别日志信息记录函数</span><br><span class="hljs-comment"> * @param fmt &#123;const char*&#125; 参数格式</span><br><span class="hljs-comment"> * @param ... 变参序列</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span>	WIN32</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_panic</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...)</span></span>;<br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>ACL_API <span class="hljs-type">void</span> __attribute__((format(printf,<span class="hljs-number">1</span>,<span class="hljs-number">2</span>)))<br>	<span class="hljs-built_in">acl_msg_panic</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *fmt,...);<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br></code></pre></td></tr></table></figure>
+
+<p>可以看到，这些函数的使用方式与 printf 类似，另外，在 UNIX 下使用 GCC 编译时前面还有一个修饰符：<strong>attribute</strong>((format(printf,m,n)))，这主要是方便 gcc 编译器针对变参进行语法检查（大家应该知道变参是如此方便灵活而又如此容易出错）。</p>
+<p>为了方便程序开发过程中的调试，下面的函数当用户未调用 acl_msg_open 打开日志而直接使用 acl_msg_xxx 写日志时，决定是否将日志信息输出至屏幕（这个函数应该在程序初始化时调用）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 当未调用 acl_msg_open 方式打开日志时，调用了 acl_msg_info/error/fatal/warn</span><br><span class="hljs-comment"> * 的操作，是否允许信息输出至标准输出屏幕上，通过此函数来设置该开关，该开关</span><br><span class="hljs-comment"> * 仅影响是否需要将信息输出至终端屏幕而不影响是否输出至文件中</span><br><span class="hljs-comment"> * @param onoff &#123;int&#125; 非 0 表示允许输出至屏幕</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_stdout_enable</span><span class="hljs-params">(<span class="hljs-type">int</span> onoff)</span></span>;<br><br>       前面曾说过，acl 的日志库还允许用户使用自己的日志记录过程，但要求用户必须在程序初始化时注册自己的日志处理函数，如下：<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 在打开日志前调用此函数注册应用自己的日志打开函数、日志关闭函数、日志记录函数</span><br><span class="hljs-comment"> * @param open_fn &#123;ACL_MSG_OPEN_FN&#125; 自定义日志打开函数</span><br><span class="hljs-comment"> * @param close_fn &#123;ACL_MSG_CLOSE_FN&#125; 自定义日志关闭函数</span><br><span class="hljs-comment"> * @param write_fn &#123;ACL_MSG_WRITE_FN&#125; 自定义日志记录函数</span><br><span class="hljs-comment"> * @param ctx &#123;void*&#125; 自定义参数</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_msg_register</span><span class="hljs-params">(ACL_MSG_OPEN_FN open_fn, ACL_MSG_CLOSE_FN close_fn,</span></span><br><span class="hljs-params"><span class="hljs-function">        ACL_MSG_WRITE_FN write_fn, <span class="hljs-type">void</span> *ctx)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>调用此函数后，以后的日志记录过程（即当用户调用：acl_msg_xxx 相关过程时）的内容便输出便由用户的日志库控制。</p>
+<p>除了以上主要的日志函数接口，在 acl_msg 中还提供了以下几个函数，便于用户知晓程序出错原因：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 获得上次系统调用出错时的错误描述信息，该函数内部采用了线程局部变量，所以是线程</span><br><span class="hljs-comment"> * 安全的，但使用起来更简单些</span><br><span class="hljs-comment"> * @return &#123;const char *&#125; 返回错误提示信息 </span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">acl_last_serror</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 获得上次系统调用出错时的错误号</span><br><span class="hljs-comment"> * @return &#123;int&#125; 错误号</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">int</span> <span class="hljs-title">acl_last_error</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、acl-debug-c-x2F-acl-debug-h"><a href="#三、acl-debug-c-x2F-acl-debug-h" class="headerlink" title="三、acl_debug.c&#x2F;acl_debug.h"></a>三、acl_debug.c&#x2F;acl_debug.h</h2><p>该日志函数库是在 acl_msg 之上的再一次封装，该库的思想来源于 squid 的日志记录方式，可以将日志分成不同的类别，每一个类别又分成不同的级别，这样用户就可以非常方便地通过配置文件来记录不同类别的不同级别的日志信息了。在程序初始化时需先调用如此函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 初始化日志调试调用接口</span><br><span class="hljs-comment"> * @param pStr &#123;const char*&#125; 调试类别（建议值在100至1000之间）标签及级别字符串，</span><br><span class="hljs-comment"> *  格式: 1,1; 2,10; 3,8...  or 1:1; 2:10; 3:8...</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_debug_init</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *pStr)</span></span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 初始化日志调试调用接口</span><br><span class="hljs-comment"> * @param pStr &#123;const char*&#125; 调试标签及级别字符串，</span><br><span class="hljs-comment"> *  格式: 1,1; 2,10; 3,8...  or 1:1; 2:10; 3:8...</span><br><span class="hljs-comment"> * @param max_debug_level &#123;int&#125; 最大调试标签值</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function">ACL_API <span class="hljs-type">void</span> <span class="hljs-title">acl_debug_init2</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *pStr, <span class="hljs-type">int</span> max_debug_level)</span></span>;<br></code></pre></td></tr></table></figure>
+
+<p>其中，第一个参数是一个由日志记录类别与级别组成的字符串，格式为：类别1:最大记录级别, 类别2:最大记录级别, …。例如：100:2; 102:3; 103:4，其含义是日志将会记录类别为 100 的所有级别值小于2、类别为 101 的所有级别值小于 3 以及类别为 103 的所有级别值小于 4 的日志信息。关于记录类别需要注意：类别值最好是 &gt;&#x3D; 100，且 &lt; 1000（当使用 acl_debug_init2 初始化时只要类别值 &gt;&#x3D; 100 即可，因为第二个参数指定了最大类别值），这是因为 acl 库内部一些保留的类别值都在 0 – 100 之间。</p>
+<p>那么具体的使用这些类别与级别记录日志的接口是什么呢？如下所示：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 日志调试宏接口</span><br><span class="hljs-comment"> * @param SECTION &#123;int&#125; 调试标签值</span><br><span class="hljs-comment"> * @param LEVEL &#123;int&#125; 对应于SECTION调试标签的级别</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> acl_debug(SECTION, LEVEL) \</span><br><span class="hljs-meta">	!acl_do_debug((SECTION), (LEVEL)) ? (void) 0 : acl_msg_info</span><br><br>        看到了吧，用户其实只需要调用一个宏即可，如下面的例子： <br><br>	<span class="hljs-comment">/* 初始化日志类别记录 */</span><br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span> *str = <span class="hljs-string">&quot;101:2; 103:4; 105:3&quot;</span>;<br>	<span class="hljs-comment">/* 记录所有类别值为 101 级别小于等于 2、类别值为 102 级别小于等于 4、类别值为 105 级别小于等于 3 的日志内容 */</span><br>	<span class="hljs-built_in">acl_debug_init</span>(str);<br><br>	......<br>	<span class="hljs-comment">/* 下面的日志因符合类别值 101 级别值 &lt;= 2 而被记录 */</span><br>	<span class="hljs-built_in">acl_debug</span>(<span class="hljs-number">101</span>, <span class="hljs-number">2</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE__, __LINE__, <span class="hljs-built_in">time</span>(<span class="hljs-literal">NULL</span>));<br><br>	<span class="hljs-comment">/* 下面日志符合类别 105 的记录级别 */</span><br>	<span class="hljs-built_in">acl_debug</span>(<span class="hljs-number">105</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE__, __LINE__, <span class="hljs-built_in">time</span>(<span class="hljs-literal">NULL</span>));<br><br>	<span class="hljs-comment">/* 下面的日志因不符合类别值 103 的记录级别条件而被忽略 */</span><br>	<span class="hljs-built_in">acl_debug</span>(<span class="hljs-number">103</span>, <span class="hljs-number">5</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE__, __LINE__, <span class="hljs-built_in">time</span>(<span class="hljs-literal">NULL</span>));<br><br>	<span class="hljs-comment">/* 下面日志的类别值 102 因不存在而被忽略 */</span><br>	<span class="hljs-built_in">acl_debug</span>(<span class="hljs-number">102</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE__, __LINE__, <span class="hljs-built_in">time</span>(<span class="hljs-literal">NULL</span>));<br></code></pre></td></tr></table></figure>
+
+<p>此外，为了方便，还可以传给 acl_debug_init 的参数写为：”all:1”，意思是所有类别的级别值 &lt;&#x3D; 1 的日志都将被记录，如下面的内容都会被记录：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs perl">	acl_debug_init(<span class="hljs-string">&quot;all:1&quot;</span>);<br>......<br>	acl_debug(<span class="hljs-number">100</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>	acl_debug(<span class="hljs-number">101</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>	acl_debug(<span class="hljs-number">101</span>, <span class="hljs-number">0</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>	acl_debug(<span class="hljs-number">102</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>	acl_debug(<span class="hljs-number">103</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>	acl_debug(<span class="hljs-number">104</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>	acl_debug(<span class="hljs-number">105</span>, <span class="hljs-number">1</span>)(<span class="hljs-string">&quot;%s(%d): log time: %ld&quot;</span>, __FILE_<span class="hljs-number">_</span>, __LINE_<span class="hljs-number">_</span>, <span class="hljs-keyword">time</span>(NULL));<br>        ......<br></code></pre></td></tr></table></figure>
+
+<p>ok，有关日志  acl 日志记录函数就先写这些，使用者可以根据项目需要采用不同的日志记录方式。</p>
+<p>github 地址：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>gitee 地址：<a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl">https://gitee.com/acl-dev/acl</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%97%A5%E5%BF%97/" class="category-chain-item">日志</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>acl 日志记录方式介绍</div>
+      <div>https://acl-dev.cn/2013/06/23/log/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2013年6月23日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2013/10/26/threads_cpp/" title="使用 acl_cpp 库编写多线程程序">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用 acl_cpp 库编写多线程程序</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2013/02/24/aio_rpc_mfc/" title="使用 acl 库 rpc 功能类实现 阻塞任务过程与MFC 界面过程分离">
+                        <span class="hidden-mobile">使用 acl 库 rpc 功能类实现 阻塞任务过程与MFC 界面过程分离</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

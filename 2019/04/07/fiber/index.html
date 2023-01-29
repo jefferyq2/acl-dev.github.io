@@ -1,0 +1,820 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="zsxxsz">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Acl 网络协程框架编程指南   摘要 一、概述 二、简单示例 三、编译安装 四、使用多核 五、多核同步 六、消息传递 七、HOOK API 八、域名解析 九、使第三方网络库协程化 十、Windows 界面编程协程化    摘要本文主要讲述Acl网络协程框架的使用，从协程的应用场景出发，以一个简单的协程示例开始，然后逐步深入到Acl网络协程的各个使用场景及使用细节，以及需要避免的“坑”，希望能给大">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Acl 网络协程框架编程指南">
+<meta property="og:url" content="https://acl-dev.cn/2019/04/07/fiber/index.html">
+<meta property="og:site_name" content="Acl developer">
+<meta property="og:description" content="Acl 网络协程框架编程指南   摘要 一、概述 二、简单示例 三、编译安装 四、使用多核 五、多核同步 六、消息传递 七、HOOK API 八、域名解析 九、使第三方网络库协程化 十、Windows 界面编程协程化    摘要本文主要讲述Acl网络协程框架的使用，从协程的应用场景出发，以一个简单的协程示例开始，然后逐步深入到Acl网络协程的各个使用场景及使用细节，以及需要避免的“坑”，希望能给大">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-04-07T05:08:24.000Z">
+<meta property="article:modified_time" content="2023-01-29T02:52:30.180Z">
+<meta property="article:author" content="zsxxsz">
+<meta property="article:tag" content="协程编程">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Acl 网络协程框架编程指南 - Acl developer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"acl-dev.cn","root":"/","version":"1.9.4","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","app_key":"5Dqdb47Rc6ylIri6ZJGMpt0B","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Acl develop!</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Acl 网络协程框架编程指南"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2019-04-07 13:08" pubdate>
+          2019年4月7日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          21k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          172 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Acl 网络协程框架编程指南</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="Acl-网络协程框架编程指南"><a href="#Acl-网络协程框架编程指南" class="headerlink" title="Acl 网络协程框架编程指南"></a>Acl 网络协程框架编程指南</h1><!-- vim-markdown-toc GFM -->
+
+<ul>
+<li><a href="#%E6%91%98%E8%A6%81">摘要</a></li>
+<li><a href="#%E4%B8%80%E6%A6%82%E8%BF%B0">一、概述</a></li>
+<li><a href="#%E4%BA%8C%E7%AE%80%E5%8D%95%E7%A4%BA%E4%BE%8B">二、简单示例</a></li>
+<li><a href="#%E4%B8%89%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85">三、编译安装</a></li>
+<li><a href="#%E5%9B%9B%E4%BD%BF%E7%94%A8%E5%A4%9A%E6%A0%B8">四、使用多核</a></li>
+<li><a href="#%E4%BA%94%E5%A4%9A%E6%A0%B8%E5%90%8C%E6%AD%A5">五、多核同步</a></li>
+<li><a href="#%E5%85%AD%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92">六、消息传递</a></li>
+<li><a href="#%E4%B8%83HOOKAPI">七、HOOK API</a></li>
+<li><a href="#%E5%85%AB%E5%9F%9F%E5%90%8D%E8%A7%A3%E6%9E%90">八、域名解析</a></li>
+<li><a href="#%E4%B9%9D%E4%BD%BF%E7%AC%AC%E4%B8%89%E6%96%B9%E7%BD%91%E7%BB%9C%E5%BA%93%E5%8D%8F%E7%A8%8B%E5%8C%96">九、使第三方网络库协程化</a></li>
+<li><a href="#%E5%8D%81Windows%E7%95%8C%E9%9D%A2%E7%BC%96%E7%A8%8B%E5%8D%8F%E7%A8%8B%E5%8C%96">十、Windows 界面编程协程化</a></li>
+</ul>
+<!-- vim-markdown-toc -->
+
+<h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>本文主要讲述Acl网络协程框架的使用，从协程的应用场景出发，以一个简单的协程示例开始，然后逐步深入到Acl网络协程的各个使用场景及使用细节，以及需要避免的“坑”，希望能给大家带来实践上的帮助。</p>
+<h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>讲到协程，大家必然会提到 Go 语言，毕竟是 Go 语言把协程的概念及使用实践普及的；但协程并不是一个新概念，我印象中在九十年代就出现了，当时一位同事还说微软推出了纤程（基本一个意思），可以创建成午上万个纤程，不必象线程那样只能创建较少的线程数量，但当时也没明白创建这么多纤程有啥用，只不过是一个上下文的快速切换协同而已。所以自己在写网络高并发服务时，主要还是以非阻塞方式来实现。<br>其实，Go 语言的作者之一 Russ Cox 早在 2002 年左右就用 C 实现了一个简单的基于协程的网络通信模型 – libtask，但其只是一个简单的网络协程原型，还远达不到实践的要求。自从 Go 语言兴起后，很多基于 C&#x2F;C++ 开发的协程库也多了起来，其中 Acl 协程库便是其中之一。<br>Acl 工程地址：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a><br>Acl 协程地址：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl/tree/master/lib_fiber">https://github.com/acl-dev/acl/tree/master/lib_fiber</a></p>
+<h2 id="二、简单示例"><a href="#二、简单示例" class="headerlink" title="二、简单示例"></a>二、简单示例</h2><p>下面为一个使用 Acl 库编写的简单线程的例子：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">mythread</span> :</span> public acl::thread<br>&#123;<br>public:<br>	mythread(<span class="hljs-type">void</span>) &#123;&#125;<br>	~mythread(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	<span class="hljs-comment">// 实现基类中纯虚方法，当线程启动时该方法将被回调</span><br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span>* <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;thread-%lu: running ...\r\n&quot;</span>, acl::thread::self());<br>		&#125;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt; threads;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>		acl::thread* thr = new mythread;<br>		threads.push_back(thr);<br>		thr-&gt;start();  <span class="hljs-comment">// 启动线程</span><br>	&#125;<br>	<br>	<span class="hljs-keyword">for</span> (<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt;::iterator it = threads.begin();<br>		it != threads.end(); ++it) &#123;<br>		(*it)-&gt;wait();  <span class="hljs-comment">// 等待线程退出</span><br>		delete *it;<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;	<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>上面线程例子非常简单，接着再给一个简单的协程的例子：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">myfiber</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	myfiber(<span class="hljs-type">void</span>) &#123;&#125;<br>	~myfiber(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	<span class="hljs-comment">// 重现基类纯虚方法，当调用 fiber::start 时，该方法将被调用</span><br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;hello world! the fiber is %d\r\n&quot;</span>, acl::fiber::self());<br>			acl::fiber::yield();  <span class="hljs-comment">// 让出CPU运行权给其它协程</span><br>		&#125;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::fiber*&gt; fibers;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>		acl::fiber* fb = new myfiber;<br>		fibers.push_back(fb);<br>		fb-&gt;start();  <span class="hljs-comment">// 启动一个协程</span><br>	&#125;<br>	<br>	acl::fiber::schedule();  <span class="hljs-comment">// 启用协程调度器</span><br>	<br>	<span class="hljs-keyword">for</span> (<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::fiber*&gt;::iterator it = fibers.begin();<br>		it != fibers.end(); ++it) &#123;<br>		delete *it;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>上面示例演示了协程的创建、启动及运行的过程，与前一个线程的例子非常相似，非常简单（简单实用是 Acl 库的目标之一）。<br><strong>协程调度其实是应用层面多个协程之间通过上下文切换形成的协作过程，如果一个协程库仅是实现了上下文切换，其实并不具备太多实用价值，当与网络事件绑定后，其价值才会显现出来</strong>。下面一个简单的使用协程的网络服务程序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-comment">// 客户端协程处理类，用来回显客户发送的内容，每一个客户端连接绑定一个独立的协程</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_echo</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_echo(acl::socket_stream* conn) : conn_(conn) &#123;&#125;<br>private:<br>	acl::socket_stream* conn_;<br>	~fiber_echo(<span class="hljs-type">void</span>) &#123; delete conn_; &#125;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-type">char</span> buf[<span class="hljs-number">8192</span>];<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			<span class="hljs-comment">// 从客户端读取数据（第三个参数为false表示不必填满整个缓冲区才返回）</span><br>			<span class="hljs-type">int</span> ret = conn_-&gt;read(buf, <span class="hljs-keyword">sizeof</span>(buf), <span class="hljs-literal">false</span>);<br>			<span class="hljs-keyword">if</span> (ret == <span class="hljs-number">-1</span>) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			<span class="hljs-comment">// 向客户端写入读到的数据</span><br>			<span class="hljs-keyword">if</span> (conn_-&gt;write(buf, ret) != ret) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>		&#125;<br>		delete this; <span class="hljs-comment">// 自销毁动态创建的协程对象</span><br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">// 独立的协程过程，接收客户端连接，并将接收的连接与新创建的协程进行绑定</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_listen</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_listen(acl::server_socket&amp; listener) : listener_(listener) &#123;&#125;<br>private:<br>	acl::server_socket&amp; listener_;<br>	~fiber_listen(<span class="hljs-type">void</span>) &#123;&#125;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			acl::socket_stream* conn = listener_.accept();  <span class="hljs-comment">// 等待客户端连接</span><br>			<span class="hljs-keyword">if</span> (conn == <span class="hljs-literal">NULL</span>) &#123;<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;accept failed: %s\r\n&quot;</span>, acl::last_serror());<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			<span class="hljs-comment">// 创建并启动单独的协程处理客户端连接</span><br>			acl::fiber* fb = new fiber_echo(conn);<br>			<span class="hljs-comment">// 启动独立的客户端处理协程</span><br>			fb-&gt;start();<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr = <span class="hljs-string">&quot;127.0.0.1:8800&quot;</span>;<br>	acl::server_socket listener;<br>	<span class="hljs-comment">// 监听本地地址</span><br>	<span class="hljs-keyword">if</span> (listener.open(addr) == <span class="hljs-literal">false</span>) &#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;listen %s error %s\r\n&quot;</span>, addr, acl::last_serror());<br>		<span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>	&#125;<br><br>	<span class="hljs-comment">// 创建并启动独立的监听协程，接受客户端连接</span><br>	acl::fiber* fb = new fiber_listen(listener);<br>	fb-&gt;start();<br><br>	<span class="hljs-comment">// 启动协程调度器</span><br>	acl::fiber::schedule();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这是一个简单的支持回显功能的网络协程服务器，可以很容易修改成线程模式。使用线程或线程处理网络通信都可以采用<strong>顺序思维</strong>模式，不必象非阻塞网络编程那样复杂，但使用协程的最大好处可以创建大量的协程来处理网络连接，而要创建大量的线程显示是不现实的（线程数非常多时，会导致操作系统的调度能力下降）。<strong>如果你的网络服务应用不需要支持大并发，使用协程的意义就没那么大了</strong>。</p>
+<h2 id="三、编译安装"><a href="#三、编译安装" class="headerlink" title="三、编译安装"></a>三、编译安装</h2><p>在编译前，需要先从 github  <a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl">https://github.com/acl-dev/acl</a>  下载源码，国内用户可以选择从 gitee  <a target="_blank" rel="noopener" href="https://gitee.com/acl-dev/acl">https://gitee.com/acl-dev/acl</a>  下载源码。</p>
+<h3 id="3-1、Linux-x2F-Unix-平台上编译安装"><a href="#3-1、Linux-x2F-Unix-平台上编译安装" class="headerlink" title="3.1、Linux&#x2F;Unix 平台上编译安装"></a>3.1、Linux&#x2F;Unix 平台上编译安装</h3><p>在 Linux&#x2F;Unix 平台上的编译非常简单，可以选择使用 make 方式或 cmake 方式进行编译。  </p>
+<ul>
+<li><strong>make 方式编译：</strong><br>在 acl 项目根目录下运行：<strong>make &amp;&amp; make packinstall</strong>，则会自动执行编译与安装过程，安装目录默认为系统目录：libacl_all.a, libfiber_cpp.a, libfiber.a 将被拷贝至 &#x2F;usr&#x2F;lib&#x2F; 目录，头文件将被拷贝至 &#x2F;usr&#x2F;include&#x2F;acl-lib&#x2F; 目录。</li>
+<li><strong>cmake 方式编译：</strong><br>在 acl 项目根目录下创建 build 目录，然后：<strong>cd build &amp;&amp; cmake .. &amp;&amp; make</strong></li>
+<li><strong>将 acl 库加入至你的工程</strong>（以 make 方式为例）<br>先在代码中加入头文件包含项：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br></code></pre></td></tr></table></figure>
+然后修改你的 Makefile 文件，示例如下：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c">mytest: mytest.cpp<br>	g++ -o mytest mytest.cpp -lfiber_cpp -lacl_all -lfiber -ldl -lpthread -lz<br></code></pre></td></tr></table></figure>
+<strong>注意在 Makefile 中各个库的依赖顺序：</strong> libfiber_cpp.a 依赖于 libacl_all.a 和 libfiber.a，其中 libacl_all.a 为 acl 的基础库，libfiber.a 为 C 语言协程库（其不依赖于 libacl_all.a），libfiber_cpp.a 用 C++ 语言封装了 libfiber.a，且使用了 libacl_all.a 中的一些功能。</li>
+</ul>
+<h3 id="3-2、Windows-平台上编译"><a href="#3-2、Windows-平台上编译" class="headerlink" title="3.2、Windows 平台上编译"></a>3.2、Windows 平台上编译</h3><p>在 Windows 平台的编译也非常简单，可以用 vc2008&#x2F;2010&#x2F;2012&#x2F;2013&#x2F;2015&#x2F;2017 打开相应的工程文件进行编译，如：可以用 vc2012 打开 acl_cpp_vc2012.sln 工程进行编译。</p>
+<h3 id="3-3-Mac-平台上编译"><a href="#3-3-Mac-平台上编译" class="headerlink" title="3.3 Mac 平台上编译"></a>3.3 Mac 平台上编译</h3><p>除可以使用 Unix 统一方式（命令行方式）编译外，还可以用 Xcode 打开工程文件进行编译。</p>
+<h3 id="3-4-Android-平台上编译"><a href="#3-4-Android-平台上编译" class="headerlink" title="3.4 Android 平台上编译"></a>3.4 Android 平台上编译</h3><p>目前可以使用 Android Studio3.x 打开 acl\android\acl 目录下的工程文件进行编译。</p>
+<h3 id="3-5-使用-MinGW-编译"><a href="#3-5-使用-MinGW-编译" class="headerlink" title="3.5 使用 MinGW 编译"></a>3.5 使用 MinGW 编译</h3><p>如果想要在 Windows 平台上编译 Unix 平台上的软件，可以借用 MinGW 套件进行编译，为此 Acl 库还提供了此种编译方式，但一般不建议用户使用这种编译方式，一方面是执行效率低，另一方面可能会存在某些不兼容问题。</p>
+<h3 id="3-6-小结"><a href="#3-6-小结" class="headerlink" title="3.6 小结"></a>3.6 小结</h3><p>为了保证 Acl 工程无障碍使用，本人在编译 Acl 库方面下了很大功夫，支持几乎在所有平台上使用原生编译环境进行编译使用，真正达到了一键编译。甚至为了避免因依赖第三方库而导致的编译问题（如：有的模块需要 zlib 库，有的需要 polassl 库，有的需要 mysql&#x2F;postgresql&#x2F;sqlite 库），将这些依赖第三方库的模块都写成动态加载第三方库的方式，毕竟不是所有人都需要这些第三方库所提供的功能。</p>
+<h2 id="四、使用多核"><a href="#四、使用多核" class="headerlink" title="四、使用多核"></a>四、使用多核</h2><p>Acl 协程的调度过程是基于单CPU的（虽然也可以修改成多核调度，但考虑到很多原因，最终还是采用了单核调度模式），即创建一个线程，所创建的所有协程都在这个线程空间中运行。为了使用多核，充分使用CPU资源，可以创建多个线程（也可以创建多个进程），每个线程为一个独立的协程运行容器，各个线程之间的协程相互隔离，互不影响。<br>下面先修改一下上面的例子，改成多线程的协程方式：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-comment">// 客户端协程处理类，用来回显客户发送的内容，每一个客户端连接绑定一个独立的协程</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_echo</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_echo(acl::socket_stream* conn) : conn_(conn) &#123;&#125;<br>private:<br>	acl::socket_stream* conn_;<br>	~fiber_echo(<span class="hljs-type">void</span>) &#123; delete conn_; &#125;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-type">char</span> buf[<span class="hljs-number">8192</span>];<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			<span class="hljs-type">int</span> ret = conn_-&gt;read(buf, <span class="hljs-keyword">sizeof</span>(buf), <span class="hljs-literal">false</span>);<br>			<span class="hljs-keyword">if</span> (ret == <span class="hljs-number">-1</span>) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			<span class="hljs-keyword">if</span> (conn_-&gt;write(buf, ret) != ret) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>		&#125;<br>		delete this; <span class="hljs-comment">// 自销毁动态创建的协程对象</span><br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">// 独立的协程过程，接收客户端连接，并将接收的连接与新创建的协程进行绑定</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_listen</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_listen(acl::server_socket&amp; listener) : listener_(listener) &#123;&#125;<br>private:<br>	acl::server_socket&amp; listener_;<br>	~fiber_listen(<span class="hljs-type">void</span>) &#123;&#125;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			acl::socket_stream* conn = listener_.accept();  <span class="hljs-comment">// 等待客户端连接</span><br>			<span class="hljs-keyword">if</span> (conn == <span class="hljs-literal">NULL</span>) &#123;<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;accept failed: %s\r\n&quot;</span>, acl::last_serror());<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			<span class="hljs-comment">// 创建并启动单独的协程处理客户端连接</span><br>			acl::fiber* fb = new fiber_echo(conn);<br>			fb-&gt;start();<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">// 独立的线程调度类</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">thread_server</span> :</span> public acl::thread<br>&#123;<br>public:<br>	thread_server(acl::server_socket&amp; listener) : listener_(listener) &#123;&#125;<br>	~thread_server(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::server_socket&amp; listener_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span>* <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-comment">// 创建并启动独立的监听协程，接受客户端连接</span><br>		acl::fiber* fb = new fiber_listen(listener);<br>		fb-&gt;start();<br>		<span class="hljs-comment">// 启动协程调度器</span><br>		acl::fiber::schedule(); <span class="hljs-comment">// 内部处于死循环过程</span><br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr = <span class="hljs-string">&quot;127.0.0.1:8800&quot;</span>;<br>	acl::server_socket listener;<br>	<span class="hljs-comment">// 监听本地地址</span><br>	<span class="hljs-keyword">if</span> (listener.open(addr) == <span class="hljs-literal">false</span>) &#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;listen %s error %s\r\n&quot;</span>, addr, acl::last_serror());<br>		<span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>	&#125;<br><br>	<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt; threads;<br>	<span class="hljs-comment">// 创建多个独立的线程对象，每个线程启用独立的协程调度过程</span><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">4</span>; i++) &#123;<br>		acl::thread* thr = thread_server(listener);<br>		threads.push_back(thr);<br>		thr-&gt;start();<br>	&#125;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt;::iterator it = threads.begin();<br>		it != threads.end(); ++it) &#123;<br>		(*it)-&gt;wait();<br>		delete *it;<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>经过修改，上面的例子即可以支持大并发，又可以使用多核。</p>
+<h2 id="五、多核同步"><a href="#五、多核同步" class="headerlink" title="五、多核同步"></a>五、多核同步</h2><p>上面的例子中涉及到了通过创建多线程使用多核的过程，但肯定会有人问，在多个线程中的协程之间如果想要共享某个资源怎么办？Acl 协程库提供了可以跨线程使用同步原语：线程协程事件同步及条件变量。<br>首先介绍一下事件同步对象类：acl::fiber_event，该类提供了三个方法：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 等待事件锁</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回 true 表示加锁成功，否则表示内部出错</span><br><span class="hljs-comment"> */</span><br><span class="hljs-type">bool</span> <span class="hljs-title function_">wait</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 尝试等待事件锁</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回 true 表示加锁成功，否则表示锁正在被占用</span><br><span class="hljs-comment"> */</span><br><span class="hljs-type">bool</span> <span class="hljs-title function_">trywait</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 事件锁拥有者释放事件锁并通知等待者</span><br><span class="hljs-comment"> * @return &#123;bool&#125; 返回 true 表示通知成功，否则表示内部出错</span><br><span class="hljs-comment"> */</span><br><span class="hljs-type">bool</span> <span class="hljs-title function_">notify</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>;<br></code></pre></td></tr></table></figure>
+<p>下面给出一个例子，看看在多个线程中的协程之间如何进行互斥的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">myfiber</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	myfiber(acl::fiber_event&amp; lock, <span class="hljs-type">int</span>&amp; count): lock_(lock), count_(count) &#123;&#125;<br>private:<br>	~myfiber(<span class="hljs-type">void</span>) &#123;&#125;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>			lock_.wait();<br>			count_++;<br>			lock_.notify();<br>			<span class="hljs-comment">//acl::fiber::delay(1);  // 本协程休息1毫秒</span><br>		&#125;<br>		delete this;<br>	&#125;<br>private:<br>	acl::fiber_event&amp; lock_;<br>	<span class="hljs-type">int</span>&amp; count_;<br>&#125;;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">mythread</span> :</span> public acl::thread<br>&#123;<br>public:<br>	mythread(acl::fiber_event&amp; lock, <span class="hljs-type">int</span>&amp; count): lock_(lock), count_(count) &#123;&#125;<br>	~mythread(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span>* <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>			acl::fiber* fb = new myfiber(lock_, count_);<br>			fb-&gt;start();<br>		&#125;<br>		acl::fiber::schedule();<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>private:<br>	acl::fiber_event&amp; lock_;<br>	<span class="hljs-type">int</span>&amp; count_;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	acl::fiber_event lock;  <span class="hljs-comment">// 可以用在多个线程之间、各个线程中的协程之间的同步过程</span><br>	<span class="hljs-type">int</span> count = <span class="hljs-number">0</span>;<br>	<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt; threads;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">4</span>; i++) &#123;<br>		acl::thread* thr = new mythread(lock, count);<br>		threads.push_back(thr);<br>		thr-&gt;start();<br>	&#125;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt;::iterator it = threads.begin();<br>		it != threads.end(); ++it) &#123;<br>		(*it)-&gt;wait();<br>		delete *it;<br>	&#125;<br><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;all over, count=%d\r\n&quot;</span>, count);<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>acl::fiber_event 常被用在多个线程中的协程之间的同步，当然也可以用在多个线程之间的同步，这在很大程度弥补了 Acl 协程框架在使用多核上的不足。</p>
+<h2 id="六、消息传递"><a href="#六、消息传递" class="headerlink" title="六、消息传递"></a>六、消息传递</h2><p>通过组合 acl::fiber_event（协程事件）和 acl::fiber_cond（协程条件变量），实现了协程间进行消息传递的功能模块：acl::fiber_tbox，fiber_tbox 不仅可以用在同一线程内的协程之间传递消息，而且还可以用在不同线程中的协程之间，不同线程之间，线程与协程之间传递消息。fiber_tbox 为模板类，因而可以传递各种类型对象。以下给出一个示例：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">myobj</span></span><br><span class="hljs-class">&#123;</span><br>public:<br>	myobj(<span class="hljs-type">void</span>) : i_(<span class="hljs-number">0</span>) &#123;&#125;<br>	~myobj(<span class="hljs-type">void</span>) &#123;&#125;<br>	<span class="hljs-type">void</span> <span class="hljs-title function_">set</span><span class="hljs-params">(<span class="hljs-type">int</span> i)</span> &#123;<br>		i_ = i;<br>	&#125;<br>	<span class="hljs-type">void</span> <span class="hljs-title function_">test</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;hello world, i=%d\r\n&quot;</span>, i_);<br>	&#125;<br>private:<br>	<span class="hljs-type">int</span> i_;<br>&#125;;<br><br><span class="hljs-comment">// 消费者协程，从消息管道中读取消息</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_consumer</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_consumer(acl::fiber_tbox&lt;myobj&gt;&amp; box) : box_(box) &#123;&#125;<br>private:<br>	~fiber_consumer(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::fiber_tbox&lt;myobj&gt;&amp; box_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			myobj* o = box_.pop();<br>			<span class="hljs-comment">// 如果读到空消息，则结束</span><br>			<span class="hljs-keyword">if</span> (o == <span class="hljs-literal">NULL</span>) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			o-&gt;test();<br>			delete o;<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">// 生产者协程，向消息管道中放置消息</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_producer</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_producer(acl::fiber_tbox&lt;myobj&gt;&amp; box) : box_(box) &#123;&#125;<br>private:<br>	~fiber_producer(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::fiber_tbox&lt;myobj&gt;&amp; box_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>			myobj* o = new myobj;<br>			o-&gt;<span class="hljs-built_in">set</span>(i);<br>			<span class="hljs-comment">// 向消息管道中放置消息</span><br>			box_.push(o);<br>		&#125;<br>		<span class="hljs-comment">// 放置空消息至消息管道中，从而通知消费者协程结束</span><br>		box_.push(<span class="hljs-literal">NULL</span>);<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	acl::fiber_tbox&lt;myobj&gt; box;<br>	<span class="hljs-comment">// 创建并启动消费者协程</span><br>	acl::fiber* consumer = new fiber_consumer(box);<br>	consumer-&gt;start();<br>	<span class="hljs-comment">// 创建并启动生产者协程</span><br>	acl::fiber* producer = new fiber_producer(box);<br>	producer-&gt;start();<br>	<span class="hljs-comment">// 启动协程调度器</span><br>	acl::fiber::schedule();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>; <br>&#125;<br></code></pre></td></tr></table></figure>
+<p>上面例子展示了同一线程中的两个协程之间的消息传递过程，因为 acl::fiber_tbox 是可以跨线程的，所以它的更大价值是用在多个线程中的不同协程之间进行消息传递。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">myobj</span></span><br><span class="hljs-class">&#123;</span><br>public:<br>	myobj(<span class="hljs-type">void</span>) : i_(<span class="hljs-number">0</span>) &#123;&#125;<br>	~myobj(<span class="hljs-type">void</span>) &#123;&#125;<br>	<span class="hljs-type">void</span> <span class="hljs-title function_">set</span><span class="hljs-params">(<span class="hljs-type">int</span> i)</span> &#123;<br>		i_ = i;<br>	&#125;<br>	<span class="hljs-type">void</span> <span class="hljs-title function_">test</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;hello world, i=%d\r\n&quot;</span>, i_);<br>	&#125;<br>private:<br>	<span class="hljs-type">int</span> i_;<br>&#125;;<br><br><span class="hljs-comment">// 消费者协程，从消息管道中读取消息</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_consumer</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_consumer(acl::fiber_tbox&lt;myobj&gt;&amp; box) : box_(box) &#123;&#125;<br>private:<br>	~fiber_consumer(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::fiber_tbox&lt;myobj&gt;&amp; box_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			myobj* o = box_.pop();<br>			<span class="hljs-comment">// 如果读到空消息，则结束</span><br>			<span class="hljs-keyword">if</span> (o == <span class="hljs-literal">NULL</span>) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			o-&gt;test();<br>			delete o;<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">// 生产者线程，向消息管道中放置消息</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">thread_producer</span> :</span> public acl::thread<br>&#123;<br>public:<br>	thread_producer(acl::fiber_tbox&lt;myobj&gt;&amp; box) : box_(box) &#123;&#125;<br>	~thread_producer(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::fiber_tbox&lt;myobj&gt;&amp; box_;<br>	<span class="hljs-type">void</span>* <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>			myobj* o = new myobj;<br>			o-&gt;<span class="hljs-built_in">set</span>(i);<br>			box_.push(o);<br>		&#125;<br>		box_.push(<span class="hljs-literal">NULL</span>);<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	acl::fiber_tbox&lt;myobj&gt; box;<br>	<span class="hljs-comment">// 创建并启动消费者协程</span><br>	acl::fiber* consumer = new fiber_consumer(box);<br>	consumer-&gt;start();<br>	<span class="hljs-comment">// 创建并启动生产者线程</span><br>	acl::thread* producer = new thread_producer(box);<br>	producer-&gt;start();<br>	<span class="hljs-comment">// 启动协程调度器</span><br>	acl::fiber::schedule();<br>	<span class="hljs-comment">// schedule() 过程返回后，表示该协程调度器结束。</span><br>	<span class="hljs-comment">// 等待生产者线程退出</span><br>	producer-&gt;wait();<br>	delete producer;<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>; <br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在该示例中，生产者为一个独立的线程，消费者为另一个线程中的协程，二者通过 acl::fiber_tbox 进行消息通信。但<strong>有一点需要注意</strong>，fiber_tbox 一般可用在“单生产者-单消费者或多生产者-单消费者”的应用场景中，不应用在多消费者的场景中，虽然用在多个消费者场景时不会造成消费丢失或内存崩溃，但当消费者数量较多时却有可能出现惊群现象，所以应避免将一个 acl::fiber_tbox 用在大量的多消费者场景中。<br>下面再给一个应用场景的例子，也是我们平时经常会遇到的。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;unistd.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">mythread</span> :</span> public acl::thread<br>&#123;<br>public:<br>	mythread(acl::fiber_tbox&lt;<span class="hljs-type">int</span>&gt;&amp; box) :box_(box) &#123;&#125;<br>	~mythread(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::fiber_tbox&lt;<span class="hljs-type">int</span>&gt;&amp; box_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span>* <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-type">int</span> i;<br>		<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++) &#123;<br>			<span class="hljs-comment">/* 假设这是一个比较耗时的操作*/</span><br>			<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;sleep one second\r\n&quot;</span>);<br>			sleep(<span class="hljs-number">1</span>);<br>		&#125;<br>		<span class="hljs-type">int</span>* n = new <span class="hljs-type">int</span>(i);<br>		<span class="hljs-comment">// 将计算结果通过消息管道传递给等待者协程</span><br>		box_.push(n);<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>; <br>	&#125;<br>&#125;;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">myfiber</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	myfiber(<span class="hljs-type">void</span>) &#123;&#125;<br>	~myfiber(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		acl::fiber_tbox&lt;<span class="hljs-type">int</span>&gt; box;<br>		mythread <span class="hljs-title function_">thread</span><span class="hljs-params">(box)</span>;<br>		thread.set_detachable(<span class="hljs-literal">true</span>);<br>		thread.start();  <span class="hljs-comment">// 启动独立的线程计算耗时运算</span><br>		<span class="hljs-type">int</span>* n = box.pop();  <span class="hljs-comment">// 等待计算线程返回运算结果，仅会阻塞当前协程</span><br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;n is %d\r\n&quot;</span>, *n);<br>		delete n;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	myfiber fb;<br>	fb.start();<br>	acl::fiber::schedule();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>协程一般用在网络高并发环境中，但协程并不是万金油，协程并不适合计算密集型应用，因为线程才是操作系统的最小调度单元，而协程不是，所以当遇到一些比较耗时的运算时，为了不阻塞当前协程所在的协程调度器，应将该耗时运算过程中抛给独立的线程去处理，然后通过 acl::fiber_tbox 等待线程的运算结果。</p>
+<h2 id="七、HOOK-API"><a href="#七、HOOK-API" class="headerlink" title="七、HOOK API"></a>七、HOOK API</h2><p>为了使现有的很多网络应用和网络库在尽量不修改的情况下协程化，Acl 协程库 Hook 了很多与 IO 和网络通信相关的系统 API，目前已经 Hook 的系统 API 有：</p>
+<table>
+<thead>
+<tr>
+<th>内容项</th>
+<th>API</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>网络相关</td>
+<td>socket&#x2F;listen&#x2F;accept&#x2F;connect</td>
+</tr>
+<tr>
+<td>IO相关</td>
+<td>read&#x2F;readv&#x2F;recv&#x2F;recvfrom&#x2F;recvmsg&#x2F;write&#x2F;writev&#x2F;send&#x2F;sendto&#x2F;sendmsg&#x2F;sendfile64</td>
+</tr>
+<tr>
+<td>域名相关</td>
+<td>gethostbyname(_r)&#x2F;getaddrinfo&#x2F;freeaddrinfo</td>
+</tr>
+<tr>
+<td>事件相关</td>
+<td>select&#x2F;poll&#x2F;epoll_create&#x2F; epoll_ctl&#x2F;epoll_wait</td>
+</tr>
+<tr>
+<td>其它</td>
+<td>close&#x2F;sleep</td>
+</tr>
+</tbody></table>
+<h2 id="八、域名解析"><a href="#八、域名解析" class="headerlink" title="八、域名解析"></a>八、域名解析</h2><p>使用协程方式编写网络通信程序，域名解析是不能绕过的，记得有一个协程库说为了支持域名解析，甚至看了相关实现代码，然后说通过 Hook _poll API 就可以了，实际上这并不是通用的做法，至少在我的环境里通过 Hook _poll API 是没用的，所以最稳妥的做法还是应该将 DNS 查询协议实现了，在 acl 的协程库中，域名解析模块在初期集成了第三方 DNS 库，参见：<a target="_blank" rel="noopener" href="https://github.com/wahern/dns">https://github.com/wahern/dns</a>  ，但因为该第 DNS 库存在很多问题（如：不能跨平台，代码混乱，没处理IO异常等问题），所以最终 acl 协程丢弃该库，自己实现了一套更加方便灵活跨平台的 DNS 协议库。 </p>
+<h2 id="九、使第三方网络库协程化"><a href="#九、使第三方网络库协程化" class="headerlink" title="九、使第三方网络库协程化"></a>九、使第三方网络库协程化</h2><p>通常网络通信库都是阻塞式的，因为非阻塞式的通信库的通用性不高（使用各自的事件引擎，很难达到应用层的使用一致性），如果把这些第三方通信库（如：mysql 客户端库，Acl 中的 Redis 库）使用协程所提供的 IO 及网络  API 重写一遍则工作量太大，不太现实，好在 Acl 协程库 Hook 了很多系统 API，从而使阻塞式的网络通信库协程化变得简单。所谓网络库协程化就是使这些网络库可以应用在协程环境中，从而可以很容易编写出支持高并发的网络程序。<br>先写一个将 Acl Redis 客户端库协程化的例子：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_redis</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_redis(acl::redis_client_cluster&amp; cluster) : cluster_(cluster) &#123;&#125;<br>private:<br>	~fiber_redis(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::redis_client_cluster&amp; cluster_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* key = <span class="hljs-string">&quot;hash-key&quot;</span>;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>			acl::redis <span class="hljs-title function_">cmd</span><span class="hljs-params">(&amp;cluster_)</span>;<br>			acl::<span class="hljs-built_in">string</span> name, val;<br>			name.format(<span class="hljs-string">&quot;hash-name-%d&quot;</span>, i);<br>			val.format(<span class="hljs-string">&quot;hash-val-%d&quot;</span>, i);<br>			<span class="hljs-keyword">if</span> (cmd.hset(key, name, val) == <span class="hljs-number">-1</span>) &#123;<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;hset error: %s, key=%s, name=%s\r\n&quot;</span>,<br>					cmd.result_error(), key, name.c_str());<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* redis_addr = <span class="hljs-string">&quot;127.0.0.1:6379&quot;</span>;<br>	acl::redis_client_cluster cluster;<br>	cluster.<span class="hljs-built_in">set</span>(redis_addr, <span class="hljs-number">0</span>);<br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>		acl::fiber* fb = new fiber_redis(cluster);<br>		fb-&gt;start();<br>	&#125;<br>	acl::fiber::schedule();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>读者可以尝试将上面的代码拷贝到自己机器上，编译后运行一下。另外，这个例子是只有一个线程，所以会发现 acl::redis_client_cluster 的使用方式和在线程下是一样的。如果将 acl::redis_client_cluster 在多个线程调度器上共享会怎样？还是有一点区别，如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/acl_cpp/lib_acl.hpp&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;acl-lib/fiber/libfiber.hpp&gt;</span></span><br><br><span class="hljs-comment">// 每个协程共享相同的 cluster 对象，向 redis-server 中添加数据</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">fiber_redis</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	fiber_redis(acl::redis_client_cluster&amp; cluster) : cluster_(cluster) &#123;&#125;<br>private:<br>	~fiber_redis(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::redis_client_cluster&amp; cluster_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-type">const</span> <span class="hljs-type">char</span>* key = <span class="hljs-string">&quot;hash-key&quot;</span>;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>			acl::redis <span class="hljs-title function_">cmd</span><span class="hljs-params">(&amp;cluster_)</span>;<br>			acl::<span class="hljs-built_in">string</span> name, val;<br>			name.format(<span class="hljs-string">&quot;hash-name-%d&quot;</span>, i);<br>			val.format(<span class="hljs-string">&quot;hash-val-%d&quot;</span>, i);<br>			<span class="hljs-keyword">if</span> (cmd.hset(key, name, val) == <span class="hljs-number">-1</span>) &#123;<br>				<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;hset error: %s, key=%s, name=%s\r\n&quot;</span>,<br>					cmd.result_error(), key, name.c_str());<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br><br><span class="hljs-comment">// 每个线程运行一个独立的协程调度器</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">mythread</span> :</span> public acl::thread<br>&#123;<br>public:<br>	mythread(acl::redis_client_cluster&amp; cluster) : cluster_(cluster) &#123;&#125;<br>	~mythread(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::redis_client_cluster&amp; cluster_;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span>* <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>			acl::fiber* fb = new fiber_redis(cluster_	);<br>			fb-&gt;start();<br>		&#125;<br>		acl::fiber::schedule();<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>	&#125;<br>&#125;;<br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>	<span class="hljs-type">const</span> <span class="hljs-type">char</span>* redis_addr = <span class="hljs-string">&quot;127.0.0.1:6379&quot;</span>;<br>	acl::redis_client_cluster cluster;<br>	cluster.<span class="hljs-built_in">set</span>(redis_addr, <span class="hljs-number">0</span>);<br>	cluster.bind_thread(<span class="hljs-literal">true</span>);<br><br>	<span class="hljs-comment">// 创建多个线程，共享 redis 集群连接池管理对象：cluster，即所有线程中的</span><br>	<span class="hljs-comment">// 所有协程共享同一个 cluster 集群管理对象</span><br>	<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt; threads;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">4</span>; i++) &#123;<br>		acl::thread* thr = new mythread(cluster);<br>		threads.push_back(thr);<br>		thr-&gt;start();<br>	&#125;<br>	<span class="hljs-keyword">for</span> (<span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;acl::thread*&gt;::iterator it = threads.begin();<br>		it != threads.end(); ++it) &#123;<br>		(*it)-&gt;wait();<br>		delete *it;<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在这个多线程多协程环境里使用 acl::redis_client_cluster 对象时与前面的一个例子有所不同，在这里调用了：<strong>cluster.bind_thread(true);</strong><br>为何要这样做？原因是 Acl Redis 的协程调度器是单线程工作模式，网络套接字句柄在协程环境里不能跨线程使用，当调用 bind_thread(true) 后，Acl 连接池管理对象会自动给每个线程分配一个连接池对象，每个线程内的所有协程共享这个绑定于本线程的连接池对象。</p>
+<h2 id="十、Windows-界面编程协程化"><a href="#十、Windows-界面编程协程化" class="headerlink" title="十、Windows 界面编程协程化"></a>十、Windows 界面编程协程化</h2><p>在Windows下写过界面程序的程序员都经历过使通信模块与界面结合的痛苦过程，因为 Windows 界面过程是基于 win32 消息引擎驱动的，所以在编写通信模块时一般有两个选择：要么使用 Windows 提供的异步非阻塞 API，要么把通信模块放在独立于界面的单独线程中然后通过窗口消息将结果通知窗口界面过程。<br>Acl 协程库的事件引擎支持 win32 消息引擎，所以很容易将界面过程的通信过程协程化，采用这种方式，一方面程序员依然可以采用顺序编程方式，另一方面通信协程与界面过程运行于相同的线程空间，则二者在相互访问对方的成员对象时不必加锁，从而使编写通信过程变得更加简单。<br>下面以一个简单的对话框为例说明界面网络通信协程化过程：    </p>
+<ol>
+<li>首先使用向导程序生成一个对话框界面程序，需要指定支持 socket 通信；</li>
+<li>然后在 OnInitDialog() 方法尾部添加如下代码：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 设置协程调度的事件引擎，同时将协程调度设为自动启动模式</span><br>acl::fiber::init(acl::FIBER_EVENT_T_WMSG, <span class="hljs-literal">true</span>);<br><span class="hljs-comment">// HOOK ACL 库中的网络 IO 过程</span><br>acl::fiber::acl_io_hook();<br></code></pre></td></tr></table></figure></li>
+<li>创建一个按钮，并使其绑定一个事件方法，如：OnBnClickedListen，然后在这个方法里添加一些代码：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 创建一个协程用来监听指定地址，接收客户端连接请求</span><br>m_fiberListen = new CFiberListener(<span class="hljs-string">&quot;127.0.0.1:8800&quot;</span>);<br><span class="hljs-comment">// 启动监听协程</span><br>m_fiberListen-&gt;start();<br></code></pre></td></tr></table></figure></li>
+<li>实现步骤 3 中指定的监听协程类<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CFiberListener</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	CFiberListener(<span class="hljs-type">const</span> <span class="hljs-type">char</span>* addr) : m_addr(addr) &#123;&#125;<br>private:<br>	~CFiberListener(<span class="hljs-type">void</span>) &#123;&#125;<br>private:<br>	acl::<span class="hljs-built_in">string</span> m_addr;<br>	acl::server_socket m_listener;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-comment">// 绑定并监听指定的本地地址</span><br>		<span class="hljs-keyword">if</span> (m_listener.open(m_addr) == <span class="hljs-literal">false</span>) &#123;<br>			<span class="hljs-keyword">return</span>;<br>		&#125;<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			<span class="hljs-comment">// 等待客户端连接</span><br>			acl::socket_stream* conn = m_listener.accept();<br>			<span class="hljs-keyword">if</span> (conn == <span class="hljs-literal">NULL</span>) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			<span class="hljs-comment">// 创建独立的协程处理该客户端的请求</span><br>			acl::fiber* fb = new CFiberClient(conn);<br>			fb-&gt;start(); <span class="hljs-comment">// 启动客户端处理协程</span><br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br></code></pre></td></tr></table></figure></li>
+<li>实现步骤 4 中指定的客户端响应协程类<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CFiberClient</span> :</span> public acl::fiber<br>&#123;<br>public:<br>	CFiberClient(acl::socket_stream* conn) : m_conn(conn) &#123;&#125;<br>private:<br>	~CFiberClient(<span class="hljs-type">void</span>) &#123; delete m_conn; &#125;<br>private:<br>	acl::socket_stream* m_conn;<br>	<span class="hljs-comment">// @override</span><br>	<span class="hljs-type">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>		<span class="hljs-type">char</span> buf[<span class="hljs-number">8192</span>];<br>		<span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>			<span class="hljs-comment">// 从客户端读取数据</span><br>			<span class="hljs-type">int</span> ret = m_conn-&gt;read(buf, <span class="hljs-keyword">sizeof</span>(buf), <span class="hljs-literal">false</span>);<br>			<span class="hljs-keyword">if</span> (ret == <span class="hljs-number">-1</span>) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>			<span class="hljs-comment">// 将读到的数据回写给客户端</span><br>			<span class="hljs-keyword">if</span> (m_conn-&gt;write(buf, ret) != ret) &#123;<br>				<span class="hljs-keyword">break</span>;<br>			&#125;<br>		&#125;<br>		delete this;<br>	&#125;<br>&#125;;<br></code></pre></td></tr></table></figure>
+通过以上步骤就可为 win32 界面程序添加基于协程模式的通信模块，上面的两个协程类的处理过程都是“死循环”的，而且又与界面过程同处同一线程运行空间，却为何却不会阻塞界面消息过程呢？其原因就是当通信协程类对象在遇到网络 IO 阻塞时，会自动将自己挂起，将线程的运行权交给其它协程或界面过程。原理就是这么简单，但内部实现还有点复杂度的，感兴趣的可以看看 Acl 协程库的实现源码(<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl/tree/master/lib_fiber/">https://github.com/acl-dev/acl/tree/master/lib_fiber/</a> )。<br>此外，上面示例的完整代码请参考：<a target="_blank" rel="noopener" href="https://github.com/acl-dev/acl/tree/master/lib_fiber/samples/WinEchod">https://github.com/acl-dev/acl/tree/master/lib_fiber/samples/WinEchod</a>  。</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%8D%8F%E7%A8%8B%E7%BC%96%E7%A8%8B/" class="category-chain-item">协程编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8D%8F%E7%A8%8B%E7%BC%96%E7%A8%8B/">#协程编程</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Acl 网络协程框架编程指南</div>
+      <div>https://acl-dev.cn/2019/04/07/fiber/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>zsxxsz</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2019年4月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/06/30/faq/" title="acl库使用FAQ">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">acl库使用FAQ</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2019/03/23/build_use_fiber/" title="编译使用Acl协程库">
+                        <span class="hidden-mobile">编译使用Acl协程库</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.5.1/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"zykZv6I4JOYMU6dwI0ehhPRG-gzGzoHsz","appKey":"5Dqdb47Rc6ylIri6ZJGMpt0B","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        总访问量 
+        <span id="leancloud-site-pv"></span>
+         次
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        总访问用户数 
+        <span id="leancloud-site-uv"></span>
+         次
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
