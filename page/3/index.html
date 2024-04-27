@@ -243,6 +243,222 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
+        <a href="/2014/03/09/threads_shock/" target="_self">
+          线程池设计中的惊群问题
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2014/03/09/threads_shock/" target="_self">
+        <div>
+          多线程编程已经是现在网络编程中常用的编程技术，设计一个良好的线程池库显得尤为重要。在 UNIX（WIN32下可以采用类似的方法，acl 库中的线程池是跨平台的） 环境下设计线程池库主要是如何用好如下系统 API：  1、pthread_cond_signal&#x2F;pthread_cond_broadcast：生产者线程通知线程池中的某个或一些消费者线程池，接收处理任务； 2、pthread_
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2014-03-09 00:30" pubdate>
+              2014-03-09
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BA%BF%E7%A8%8B%E7%BC%96%E7%A8%8B/" class="category-chain-item">线程编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2013/10/26/threads_cpp/" target="_self">
+          使用 acl_cpp 库编写多线程程序
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2013/10/26/threads_cpp/" target="_self">
+        <div>
+          在 《利用ACL库开发高并发半驻留式线程池程序》中介绍了如何使用 C 版本的 acl 线程库编写多线程程序，本文将会介绍如何使用 C++ 版本的 acl 线程库编写多线程程序，虽然 C++ 版 acl 线程库基于 C 版的线程库，但却提供了更为清晰简洁的接口定义（很多地方参考了 JAVA 的线程接口定义）。下面是一个简单的使用线程的例子： 12345678910111213141516171819
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2013-10-26 18:18" pubdate>
+              2013-10-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BA%BF%E7%A8%8B%E7%BC%96%E7%A8%8B/" class="category-chain-item">线程编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2013/06/23/log/" target="_self">
+          acl 日志记录方式介绍
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2013/06/23/log/" target="_self">
+        <div>
+          在使用 acl 库编写应用过程中，记录日志是一个非常重要的过程，acl 从几个层面提供了日志的不同记录方式。在 acl 的 C 库部分(lib_acl.a)，有三个源文件与日志记录相关：acl_msg.c&#x2F;acl_msg.h, acl_mylog.c&#x2F;acl_mylog.h, acl_debug.c&#x2F;acl_debug.h。其中，acl_mylog.c 是真正记录日志
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2013-06-23 23:18" pubdate>
+              2013-06-23
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%97%A5%E5%BF%97/" class="category-chain-item">日志</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2013/02/24/aio_rpc_mfc/" target="_self">
+          使用 acl 库 rpc 功能类实现 阻塞任务过程与MFC 界面过程分离
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2013/02/24/aio_rpc_mfc/" target="_self">
+        <div>
+          一、概述MFC 程序员在编写 Windows 界面程序时经常需要处理一些阻塞任务过程，为了避免阻塞窗口的消息过程，一般会将阻塞过程将由一个子线程处理，该子线程在处理过程中通过向界面线程发送 Windows 窗口消息将处理结果传递给窗口线程。在 acl 库中的 rpc 功能类实现了更为方便的处理方式，通过 rpc 功能类，用户可以在主线程中进行非阻塞过程（如：界面消息过程或网络非阻塞通讯过程），而将
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2013-02-24 16:42" pubdate>
+              2013-02-24
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E9%9D%9E%E9%98%BB%E5%A1%9E%E7%BC%96%E7%A8%8B/" class="category-chain-item">非阻塞编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
         <a href="/2012/07/13/aio_rpc/" target="_self">
           acl_cpp 的 rpc 相关类整合阻塞及非阻塞过程
         </a>
@@ -577,236 +793,6 @@
               <a href="/tags/http/">#http</a>
             
           </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2012/04/04/aio/" target="_self">
-          非阻塞网络编程实例讲解
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2012/04/04/aio/" target="_self">
-        <div>
-          一、概述acl 库的 C 库(lib_acl) 的 aio 模块设计了完整的非阻塞异步 IO 通信过程，在 acl 的C++库(lib_acl_cpp) 中封装并增强了异步通信的功能，本文主要描述了 acl C++ 库之非阻塞IO库的设计及使用方法，该异步流的设计思路为：异步流类与异步流接口类，其中异步流类对象完成网络套接口监听、连接、读写的操作，异步流接口类对象定义了网络读写成功&#x2F;超时
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2012-04-04 23:22" pubdate>
-              2012-04-04
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E9%9D%9E%E9%98%BB%E5%A1%9E%E7%BC%96%E7%A8%8B/" class="category-chain-item">非阻塞编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2010/01/13/http_dowload2/" target="_self">
-          使用 acl 较为底层的 HTTP 协议库写 HTTP 下载客户端举例
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2010/01/13/http_dowload2/" target="_self">
-        <div>
-          在《使用 acl 库开发一个 HTTP 下载客户端》文章中介绍利用ACL库中的 HTTP 高级API函数编写HTTP下载客户端的简单的例子，本文介绍一下如何使用稍微底层的API来编写同样功能的例子。在这个例子中，可以看到那些高级API是如何封装底层API的。 请先看一个例子如下： 12345678910111213141516171819202122232425262728293031323334
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2010-01-13 13:08" pubdate>
-              2010-01-13
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/http%E5%BC%80%E5%8F%91/" class="category-chain-item">http开发</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/http/">#http</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2010/01/11/http_dowload/" target="_self">
-          使用 acl 库开发一个 HTTP 下载客户端
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2010/01/11/http_dowload/" target="_self">
-        <div>
-          在 acl 的协议库(lib_protocol) 中有专门针对 HTTP 协议和 ICMP 协议的，本文主要介绍如何使用 lib_protocol 协议库来开发一个简单的 http 客户端。下面首先介绍一下几个本文用到的函数接口。 123456789101112131415161718192021222324252627282930313233343536373839404142434445464
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2010-01-11 18:08" pubdate>
-              2010-01-11
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/http%E5%BC%80%E5%8F%91/" class="category-chain-item">http开发</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/http/">#http</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2009/11/03/configure/" target="_self">
-          配置文件的读取
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2009/11/03/configure/" target="_self">
-        <div>
-          配置文件的读取是程序中必要部分，虽然不算复杂，但如果每次都写配置文件的分析提取代码也是件烦人的事。现在流行的配置文件格式有：ini，xml ，简单name-value对等格式，ACL库中实现了最简单的 name-value对格式的配置文件，该文件格式有点类似于 xinetd.conf 的格式，文件格式如下： test.cf: 12345678910111213service myapp &#123
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2009-11-03 12:43" pubdate>
-              2009-11-03
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/" class="category-chain-item">配置文件</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
         
       </div>
     </article>

@@ -243,6 +243,243 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
+        <a href="/2024/04/27/file_lock/" target="_self">
+          Unix 系统文件锁踩坑记
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/27/file_lock/" target="_self">
+        <div>
+          Unix 系统文件锁踩坑记1、背景最近的一个项目需要通过文件锁方式实现多进程之间的资源互斥，但却遇到一个诡异的现象：当进程数比较少时，感觉加锁是正常的，但当进程数一多，加锁就失效了，似乎多个进程都可以同时加一把锁，锁的互斥性完全失效。因为锁功能的实现经过Acl库（https://github.com/acl-dev/acl ）进行了二次封装，同时项目本身又比较复杂，所以决定做一个简单的例子测试一下
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-04-27 13:00" pubdate>
+              2024-04-27
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%96%87%E4%BB%B6/" class="category-chain-item">文件</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2024/03/30/openssl_io/" target="_self">
+          OpenSSL IO读写超时踩坑小记
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/30/openssl_io/" target="_self">
+        <div>
+          OpenSSL IO读写超时踩坑小记一、背景最近一个线上服务项目需要开启 SSL 功能，该项目使用了Acl库中的 SSL、HTTP及协程模块、，Acl SSL 模块封装了OpenSSL库，使用户编写 SSL 服务更加简便快捷。当该服务程序开启 SSL 功能后，发现有 TCP 连接句柄较长时间堵在 IO 读上，所设置的 SSL IO 读写超时失去作用，造成的后果是服务程序内存不断增长。因为在线连接比
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-03-30 16:08" pubdate>
+              2024-03-30
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SSL%E7%BC%96%E7%A8%8B/" class="category-chain-item">SSL编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/SSL%E7%BC%96%E7%A8%8B/">#SSL编程</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2023/06/10/using_master/" target="_self">
+          使用 acl_master 管理你的服务器程序
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/10/using_master/" target="_self">
+        <div>
+          使用 acl_master 管理你的服务器程序一、概述在 Acl(https://github.com/acl-dev/acl/) 项目中的 acl_master 模块(位于app&#x2F;master&#x2F;daemon&#x2F; 目录下) 是一个功能强大的服务管理模块，即可以管理使用 Acl 库编写的服务程序，也可以管理非Acl库写的服务程序（如可以管理redis, dnsmasq,
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-06-10 11:00" pubdate>
+              2023-06-10
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9C%8D%E5%8A%A1%E7%BC%96%E7%A8%8B/" class="category-chain-item">服务编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E7%BC%96%E7%A8%8B/">#服务编程</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2023/05/27/using_wizard/" target="_self">
+          使用向导快速生成服务程序
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/05/27/using_wizard/" target="_self">
+        <div>
+          使用向导快速生成服务程序一、概述在 Acl 工程提供了一个简单实用的工具（位于：acl&#x2F;app&#x2F;wizard 目录下），可协助使用者快速生成基于 Acl 库的服务器程序，所生成的服务器程序包含了 Acl 服务器编程框架中的多种服务模型（进程池模型、线程池模型、非阻塞模型、协程模型、触发器模型），同时面向 HTTP 开发者提供了基于进程池模型、线程池模型及协程模型的 HTTP 服
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-05-27 21:57" pubdate>
+              2023-05-27
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9C%8D%E5%8A%A1%E7%BC%96%E7%A8%8B/" class="category-chain-item">服务编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E7%BC%96%E7%A8%8B/">#服务编程</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
         <a href="/2020/06/05/about_fiber/" target="_self">
           iQiYi使用网络协程编写高并发应用实践
         </a>
@@ -312,7 +549,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2020/01/15/ssl/" target="_self">
         <div>
-          使用SSL中对数据进行加密传输一、概述在 Acl 的网络通信模块中，为了支持安全网络传输，引入了第三方 SSL 库，当前支持 Polarssl 及其升级版 MbedTLS，Acl 库中通过抽象与封装，大大简化了 SSL 的使用过程（现在开源的 SSL 库使用确实太复杂了），以下是在 Acl 库中使用 SSL 的特点：    为了不给不使用 SSL 功能的用户造成编译上的障碍，Acl 库采用动态加载
+          使用SSL中对数据进行加密传输一、概述在 Acl 的网络通信模块中，为了支持安全网络传输，引入了第三方 SSL 库，当前支持 OpenSSL, PolarSSL 及其升级版 MbedTLS，Acl 库中通过抽象与封装，大大简化了 SSL 的使用过程（现在开源的 SSL 库使用过程确实过于太复杂），以下是在 Acl 库中使用 SSL 的特点：    动态加载第三方SSL库： 为了不给非 SSL 用户
         </div>
       </a>
 
@@ -574,229 +811,6 @@
       <span class="category-chain">
         
   <a href="/categories/%E5%AF%B9%E8%B1%A1%E5%BA%8F%E5%88%97%E5%8C%96/" class="category-chain-item">对象序列化</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2016/10/16/serialize/" target="_self">
-          使用 acl 库针对 C++ 对象进行序列化及反序列编程
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2016/10/16/serialize/" target="_self">
-        <div>
-          在开发网络应用程序时，各个模块之间的数据通信可谓是家常便饭，为了应对这些数据通信时数据交换的要求，程序员发明了各种数据格式：采用二进制数据结构（早期 C 程序员）、采用 XML、采用SOAP（坑人的设计）、采用 URL 编码、采用JSON格式等。客户端与服务端交互时采用这些数据格式进行数据交换时，必然要经历数据编码及数据解码的繁琐过程。早期的二进制数据结构格式对于 C 程序员而是比较简单的，在解码
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2016-10-16 20:27" pubdate>
-              2016-10-16
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%AF%B9%E8%B1%A1%E5%BA%8F%E5%88%97%E5%8C%96/" class="category-chain-item">对象序列化</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2016/07/06/fiber_web/" target="_self">
-          使用协程方式编写高并发的WEB服务
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2016/07/06/fiber_web/" target="_self">
-        <div>
-          在《使用 acl 协程编写高并发网络服务》中介绍了一个使用 acl 协程库编写高并发网络服务的应用示例，本节将展示一个稍微复杂些且更具实际意义的例子：基于协程的 WEB 服务器程序。下面首先展示这个 WEB 服务器程序： 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2016-07-06 21:01" pubdate>
-              2016-07-06
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%8D%8F%E7%A8%8B%E7%BC%96%E7%A8%8B/" class="category-chain-item">协程编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%8D%8F%E7%A8%8B%E7%BC%96%E7%A8%8B/">#协程编程</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2016/04/23/redis_builder2/" target="_self">
-          使用 redis_builder 管理 redis 集群
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2016/04/23/redis_builder2/" target="_self">
-        <div>
-          在 &lt;一个 C++ redis 集群管理工具&gt; 中主要讲述了如何使用 redis_builder 工具创建 redis 集群的过程，除此之外，该工具还具有更为强大的 redis 客户端管理功能（相对于官方提供的 redis-cli功能要强大的多）。本文主要讲解使用 redis_builder 以交互方式管理 redis 集群的过程。 一、启动 redis_builder 的交互过程只要
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2016-04-23 19:59" pubdate>
-              2016-04-23
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/redis%E4%BD%BF%E7%94%A8/" class="category-chain-item">redis使用</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2015/11/15/memory_pool/" target="_self">
-          使用 acl 内存池模块管理动态对象
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2015/11/15/memory_pool/" target="_self">
-        <div>
-          C&#x2F;C++ 最容易出问题的地方是内存管理，容易造成内存泄露和内存越界，这一直是 C&#x2F;C++ 程序员比较头疼的事情，但 C&#x2F;C++ 最大的优势也是内存管理，可以让程序员直接管理内存，从而使程序运行更为高效。acl 库中的内存池管理器 dbuf_guard 在管理内存的效率上比系统级内存管理方式（malloc&#x2F;free, new&#x2F;delete）更为高效
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2015-11-15 00:27" pubdate>
-              2015-11-15
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" class="category-chain-item">内存管理</a>
   
   
 
